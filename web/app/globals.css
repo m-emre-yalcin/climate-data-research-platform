@@ -1,0 +1,127 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated color tokens to match design brief with #0358a4 primary */
+  --background: oklch(0.97 0.005 240); /* #f1f5f9 Light Gray background */
+  --foreground: oklch(0.35 0.15 240); /* #0358a4 Deep Sky Blue text */
+  --card: oklch(1 0 0); /* #ffffff White cards */
+  --card-foreground: oklch(0.35 0.15 240); /* #0358a4 text on cards */
+  --popover: oklch(1 0 0); /* #ffffff White popover */
+  --popover-foreground: oklch(0.35 0.15 240); /* #0358a4 popover text */
+  --primary: oklch(0.35 0.15 240); /* #0358a4 Primary actions */
+  --primary-foreground: oklch(1 0 0); /* #ffffff Text on primary */
+  --secondary: oklch(0.65 0.15 160); /* #10b981 Emerald Green secondary */
+  --secondary-foreground: oklch(1 0 0); /* #ffffff Text on secondary */
+  --muted: oklch(0.97 0.005 240); /* #f1f5f9 Muted elements */
+  --muted-foreground: oklch(0.45 0.02 240); /* #475569 Slate Gray muted text */
+  --accent: oklch(0.65 0.15 160); /* #10b981 Emerald accent */
+  --accent-foreground: oklch(1 0 0); /* #ffffff Text on accent */
+  --destructive: oklch(0.55 0.25 15); /* #be123c Error red */
+  --destructive-foreground: oklch(1 0 0); /* #ffffff Text on error */
+  --border: oklch(0.92 0.005 240); /* #e2e8f0 Light borders */
+  --input: oklch(1 0 0); /* #ffffff Input background */
+  --ring: oklch(0.35 0.15 240); /* #0358a4 Focus ring */
+  --chart-1: oklch(0.65 0.15 160); /* #10b981 Chart color 1 */
+  --chart-2: oklch(0.55 0.2 270); /* #6366f1 Chart color 2 */
+  --chart-3: oklch(0.55 0.25 15); /* #be123c Chart color 3 */
+  --chart-4: oklch(0.7 0.15 60); /* #f59e0b Chart color 4 */
+  --chart-5: oklch(0.5 0.25 270); /* #4f46e5 Chart color 5 */
+  --radius: 0.5rem;
+  --sidebar: oklch(0.97 0.005 240); /* #f1f5f9 Sidebar background */
+  --sidebar-foreground: oklch(0.35 0.15 240); /* #0358a4 Sidebar text */
+  --sidebar-primary: oklch(1 0 0); /* #ffffff Primary sidebar items */
+  --sidebar-primary-foreground: oklch(0.35 0.15 240); /* #0358a4 Primary sidebar text */
+  --sidebar-accent: oklch(0.65 0.15 160); /* #10b981 Sidebar accent */
+  --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff Sidebar accent text */
+  --sidebar-border: oklch(0.92 0.005 240); /* #e2e8f0 Sidebar border */
+  --sidebar-ring: oklch(0.35 0.15 240); /* #0358a4 Sidebar focus ring */
+}
+
+.dark {
+  /* Updated dark mode tokens to complement the primary color scheme */
+  --background: oklch(0.15 0.02 240); /* Dark background */
+  --foreground: oklch(0.95 0.005 240); /* Light text */
+  --card: oklch(0.18 0.02 240); /* Dark cards */
+  --card-foreground: oklch(0.95 0.005 240); /* Light card text */
+  --popover: oklch(0.18 0.02 240); /* Dark popover */
+  --popover-foreground: oklch(0.95 0.005 240); /* Light popover text */
+  --primary: oklch(0.6 0.15 240); /* Lighter primary for dark mode */
+  --primary-foreground: oklch(0.15 0.02 240); /* Dark text on primary */
+  --secondary: oklch(0.25 0.02 240); /* Dark secondary */
+  --secondary-foreground: oklch(0.95 0.005 240); /* Light secondary text */
+  --muted: oklch(0.25 0.02 240); /* Dark muted */
+  --muted-foreground: oklch(0.65 0.01 240); /* Muted text */
+  --accent: oklch(0.25 0.02 240); /* Dark accent */
+  --accent-foreground: oklch(0.95 0.005 240); /* Light accent text */
+  --destructive: oklch(0.45 0.2 15); /* Dark mode error */
+  --destructive-foreground: oklch(0.9 0.1 15); /* Error text */
+  --border: oklch(0.25 0.02 240); /* Dark borders */
+  --input: oklch(0.25 0.02 240); /* Dark inputs */
+  --ring: oklch(0.5 0.1 240); /* Dark focus ring */
+  --chart-1: oklch(0.55 0.2 270); /* Dark chart colors */
+  --chart-2: oklch(0.7 0.15 160);
+  --chart-3: oklch(0.75 0.18 70);
+  --chart-4: oklch(0.65 0.25 300);
+  --chart-5: oklch(0.65 0.25 16);
+  --sidebar: oklch(0.12 0.02 240); /* Dark sidebar */
+  --sidebar-foreground: oklch(0.95 0.005 240); /* Light sidebar text */
+  --sidebar-primary: oklch(0.55 0.2 270); /* Primary sidebar items */
+  --sidebar-primary-foreground: oklch(0.95 0.005 240); /* Primary sidebar text */
+  --sidebar-accent: oklch(0.25 0.02 240); /* Sidebar accent */
+  --sidebar-accent-foreground: oklch(0.95 0.005 240); /* Sidebar accent text */
+  --sidebar-border: oklch(0.25 0.02 240); /* Sidebar border */
+  --sidebar-ring: oklch(0.5 0.1 240); /* Sidebar focus ring */
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

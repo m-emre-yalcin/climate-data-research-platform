@@ -1,2 +1,4 @@
 *.csv
 *.nc
+.DS_Store
+ai_*
