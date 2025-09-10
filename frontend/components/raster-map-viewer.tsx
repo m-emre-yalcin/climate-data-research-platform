@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -74,12 +72,161 @@ interface RasterMapViewerProps {
   description?: string;
 }
 
-export function RasterMapViewer({
-  data,
+// Mock data for demonstration
+const mockData: NetCDFRasterData = {
+  dimensions: { time: 24, lat: 180, lon: 360 },
+  variables: ["pr", "temperature", "humidity"],
+  coordinates: ["time", "lat", "lon"],
+  attributes: {
+    title: "Climate Model Output - Precipitation and Temperature Data",
+    institution: "Climate Research Institute",
+    comment: "This is a demonstration with mock data",
+  },
+  shape: {
+    pr: [24, 180, 360],
+    temperature: [24, 180, 360],
+    humidity: [24, 180, 360],
+  },
+  sample_layers: {
+    layer1: {
+      data: "base64encodeddata",
+      shape: [180, 360],
+      min: 0.0001,
+      max: 0.05,
+      mean: 0.0025,
+    },
+    layer2: {
+      data: "base64encodeddata",
+      shape: [180, 360],
+      min: -10.5,
+      max: 35.2,
+      mean: 15.8,
+    },
+  },
+};
+
+// Leaflet Map Component (Client-side only)
+function LeafletMapComponent({
+  selectedVariable,
+  currentTimeIndex,
+  colorScale,
+  opacity,
+  minVal,
+  maxVal,
+}: {
+  selectedVariable: string;
+  currentTimeIndex: number;
+  colorScale: string;
+  opacity: number;
+  minVal: number;
+  maxVal: number;
+}) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const layerRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === "undefined" || !mapRef.current) return;
+
+    // Dynamically import Leaflet
+    const initMap = async () => {
+      const L = (await import("leaflet")).default;
+      await import("leaflet/dist/leaflet.css");
+
+      // Fix default marker icons
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl:
+          "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+
+      if (!mapInstanceRef.current && mapRef.current) {
+        mapInstanceRef.current = L.map(mapRef.current, {
+          center: [0, 0],
+          zoom: 2,
+          minZoom: 1,
+          maxZoom: 8,
+          worldCopyJump: true,
+          preferCanvas: true,
+        });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(mapInstanceRef.current);
+      }
+    };
+
+    initMap();
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update raster layer when parameters change
+  useEffect(() => {
+    if (!mapInstanceRef.current || typeof window === "undefined") return;
+
+    const updateRasterLayer = async () => {
+      const L = (await import("leaflet")).default;
+
+      // Remove existing layer
+      if (layerRef.current) {
+        mapInstanceRef.current.removeLayer(layerRef.current);
+      }
+
+      // Create mock raster overlay (replace with actual tile fetching)
+      const bounds = [
+        [-85, -180],
+        [85, 180],
+      ] as [[number, number], [number, number]];
+
+      // Create a simple colored rectangle as demonstration
+      const getColor = () => {
+        const colors = {
+          viridis: "#440154",
+          plasma: "#0d0887",
+          blues: "#08519c",
+          precipitation: "#1f78b4",
+        };
+        return colors[colorScale as keyof typeof colors] || colors.viridis;
+      };
+
+      layerRef.current = L.rectangle(bounds, {
+        color: getColor(),
+        weight: 0,
+        fillOpacity: opacity / 100,
+        fillColor: getColor(),
+      }).addTo(mapInstanceRef.current);
+
+      // Add info popup
+      layerRef.current.bindPopup(`
+        <b>${selectedVariable.toUpperCase()}</b><br>
+        Time Step: ${currentTimeIndex + 1}<br>
+        Color Scale: ${colorScale}<br>
+        Opacity: ${opacity}%
+      `);
+    };
+
+    updateRasterLayer();
+  }, [selectedVariable, currentTimeIndex, colorScale, opacity, minVal, maxVal]);
+
+  return <div ref={mapRef} className="w-full h-full" />;
+}
+
+export const RasterMapViewer = ({
+  data = mockData,
   title = "Climate Data Visualization",
   description,
-}: RasterMapViewerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+}: RasterMapViewerProps) => {
   const [selectedVariable, setSelectedVariable] = useState<string>(
     data.variables[0] || ""
   );
@@ -88,197 +235,21 @@ export function RasterMapViewer({
   const [colorScale, setColorScale] = useState("viridis");
   const [opacity, setOpacity] = useState([80]);
   const [showLegend, setShowLegend] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  // Generate realistic precipitation data based on the NetCDF structure
-  const generateRealisticData = useCallback(
-    (variable: string, timeIndex: number) => {
-      const { lat: latCount, lon: lonCount } = data.dimensions;
-      const mockData: number[][] = [];
+  // Ensure client-side rendering for map
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-      // Use the sample layer statistics for realistic ranges
-      const layer1 = data.sample_layers.layer1;
-      const layer2 = data.sample_layers.layer2;
-      const minVal = Math.min(layer1.min, layer2.min);
-      const maxVal = Math.max(layer1.max, layer2.max);
-      const meanVal = (layer1.mean + layer2.mean) / 2;
-
-      // Create smaller grid for performance (downsample)
-      const sampleLat = Math.min(200, latCount);
-      const sampleLon = Math.min(400, lonCount);
-
-      for (let lat = 0; lat < sampleLat; lat++) {
-        const row: number[] = [];
-        for (let lon = 0; lon < sampleLon; lon++) {
-          let value = 0;
-
-          if (variable === "pr") {
-            // Generate precipitation patterns similar to the sample data
-            const latNorm = lat / sampleLat;
-            const lonNorm = lon / sampleLon;
-            const timeNorm = timeIndex / data.dimensions.time;
-
-            // Create realistic precipitation patterns
-            const seasonalPattern =
-              Math.sin(timeNorm * 2 * Math.PI) * 0.3 + 0.7;
-            const latitudePattern = Math.sin(latNorm * Math.PI) * 0.5 + 0.5;
-            const longitudePattern =
-              Math.sin(lonNorm * 4 * Math.PI) * 0.2 + 0.8;
-
-            // Base pattern
-            value =
-              meanVal * seasonalPattern * latitudePattern * longitudePattern;
-
-            // Add some realistic noise and coastal effects
-            const noise = (Math.random() - 0.5) * meanVal * 0.5;
-            const coastalEffect =
-              Math.sin(lonNorm * 2 * Math.PI) * meanVal * 0.3;
-
-            value = Math.max(
-              minVal,
-              Math.min(maxVal, value + noise + coastalEffect)
-            );
-          }
-
-          row.push(value);
-        }
-        mockData.push(row);
-      }
-
-      return mockData;
-    },
-    [data.dimensions, data.sample_layers]
+  const minVal = Math.min(
+    data.sample_layers.layer1.min,
+    data.sample_layers.layer2.min
   );
-
-  // Color scale functions
-  const getColorScales = () => ({
-    viridis: [
-      [0, [68, 1, 84]],
-      [0.25, [59, 82, 139]],
-      [0.5, [33, 145, 140]],
-      [0.75, [94, 201, 98]],
-      [1, [253, 231, 37]],
-    ],
-    plasma: [
-      [0, [13, 8, 135]],
-      [0.25, [126, 3, 168]],
-      [0.5, [203, 70, 121]],
-      [0.75, [248, 149, 64]],
-      [1, [240, 249, 33]],
-    ],
-    blues: [
-      [0, [247, 251, 255]],
-      [0.25, [198, 219, 239]],
-      [0.5, [107, 174, 214]],
-      [0.75, [49, 130, 189]],
-      [1, [8, 81, 156]],
-    ],
-    precipitation: [
-      [0, [255, 255, 255]],
-      [0.2, [199, 233, 180]],
-      [0.4, [127, 205, 187]],
-      [0.6, [65, 182, 196]],
-      [0.8, [29, 145, 192]],
-      [1, [34, 94, 168]],
-    ],
-  });
-
-  const interpolateColor = (
-    value: number,
-    min: number,
-    max: number,
-    colorScale: string
-  ) => {
-    const scales = getColorScales();
-    const scale = scales[colorScale as keyof typeof scales] || scales.viridis;
-
-    const normalized = Math.max(0, Math.min(1, (value - min) / (max - min)));
-
-    // Find the two colors to interpolate between
-    let lowerIndex = 0;
-    let upperIndex = scale.length - 1;
-
-    for (let i = 0; i < scale.length - 1; i++) {
-      if (normalized >= scale[i][0] && normalized <= scale[i + 1][0]) {
-        lowerIndex = i;
-        upperIndex = i + 1;
-        break;
-      }
-    }
-
-    const lower = scale[lowerIndex];
-    const upper = scale[upperIndex];
-    const t =
-      upperIndex === lowerIndex
-        ? 0
-        : (normalized - lower[0]) / (upper[0] - lower[0]);
-
-    const r = Math.round(lower[1][0] + (upper[1][0] - lower[1][0]) * t);
-    const g = Math.round(lower[1][1] + (upper[1][1] - lower[1][1]) * t);
-    const b = Math.round(lower[1][2] + (upper[1][2] - lower[1][2]) * t);
-
-    return [r, g, b];
-  };
-
-  // Render the raster data on canvas
-  const renderRasterData = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const mockData = generateRealisticData(selectedVariable, currentTimeIndex);
-    const latCount = mockData.length;
-    const lonCount = mockData[0].length;
-
-    // Calculate min/max values for color scaling
-    let min = Number.POSITIVE_INFINITY;
-    let max = Number.NEGATIVE_INFINITY;
-
-    mockData.forEach((row) => {
-      row.forEach((value) => {
-        min = Math.min(min, value);
-        max = Math.max(max, value);
-      });
-    });
-
-    // Set canvas size
-    const pixelSize = 3; // Larger pixels for better visibility
-    canvas.width = lonCount * pixelSize;
-    canvas.height = latCount * pixelSize;
-
-    // Create image data
-    const imageData = ctx.createImageData(canvas.width, canvas.height);
-    const pixels = imageData.data;
-
-    for (let lat = 0; lat < latCount; lat++) {
-      for (let lon = 0; lon < lonCount; lon++) {
-        const value = mockData[lat][lon];
-        const [r, g, b] = interpolateColor(value, min, max, colorScale);
-
-        // Each data point maps to a pixelSize x pixelSize area
-        for (let dy = 0; dy < pixelSize; dy++) {
-          for (let dx = 0; dx < pixelSize; dx++) {
-            const pixelIndex =
-              ((lat * pixelSize + dy) * canvas.width + (lon * pixelSize + dx)) *
-              4;
-            pixels[pixelIndex] = r; // Red
-            pixels[pixelIndex + 1] = g; // Green
-            pixels[pixelIndex + 2] = b; // Blue
-            pixels[pixelIndex + 3] = Math.round(opacity[0] * 2.55); // Alpha
-          }
-        }
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-  }, [
-    selectedVariable,
-    currentTimeIndex,
-    colorScale,
-    opacity,
-    generateRealisticData,
-  ]);
+  const maxVal = Math.max(
+    data.sample_layers.layer1.max,
+    data.sample_layers.layer2.max
+  );
 
   // Animation controls
   useEffect(() => {
@@ -294,11 +265,6 @@ export function RasterMapViewer({
       if (interval) clearInterval(interval);
     };
   }, [isPlaying, data.dimensions.time]);
-
-  // Re-render when parameters change
-  useEffect(() => {
-    renderRasterData();
-  }, [renderRasterData]);
 
   const getVariableDisplayName = (variable: string) => {
     const names: { [key: string]: string } = {
@@ -478,12 +444,24 @@ export function RasterMapViewer({
         </div>
 
         {/* Map Display */}
-        <div className="relative border rounded-lg overflow-hidden bg-slate-100">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-96 object-contain"
-            style={{ imageRendering: "pixelated" }}
-          />
+        <div className="relative border rounded-lg overflow-hidden bg-slate-100 h-96">
+          {isClient ? (
+            <LeafletMapComponent
+              selectedVariable={selectedVariable}
+              currentTimeIndex={currentTimeIndex}
+              colorScale={colorScale}
+              opacity={opacity[0]}
+              minVal={minVal}
+              maxVal={maxVal}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-gray-100">
+              <div className="text-center">
+                <Map className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-500">Loading map...</p>
+              </div>
+            </div>
+          )}
 
           {/* Info Overlay */}
           <div className="absolute inset-0 pointer-events-none">
@@ -506,7 +484,7 @@ export function RasterMapViewer({
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">
-                  {data.sample_layers.layer1.min.toExponential(2)}
+                  {minVal.toExponential(2)}
                 </span>
                 <div
                   className="w-32 h-4 rounded"
@@ -514,11 +492,15 @@ export function RasterMapViewer({
                     background:
                       colorScale === "precipitation"
                         ? `linear-gradient(to right, rgb(255,255,255), rgb(199,233,180), rgb(127,205,187), rgb(65,182,196), rgb(29,145,192), rgb(34,94,168))`
+                        : colorScale === "blues"
+                        ? `linear-gradient(to right, rgb(247,251,255), rgb(198,219,239), rgb(107,174,214), rgb(49,130,189), rgb(8,81,156))`
+                        : colorScale === "plasma"
+                        ? `linear-gradient(to right, rgb(13,8,135), rgb(126,3,168), rgb(203,70,121), rgb(248,149,64), rgb(240,249,33))`
                         : `linear-gradient(to right, rgb(68,1,84), rgb(59,82,139), rgb(33,145,140), rgb(94,201,98), rgb(253,231,37))`,
                   }}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {data.sample_layers.layer1.max.toExponential(2)}
+                  {maxVal.toExponential(2)}
                 </span>
               </div>
               <span className="text-xs text-muted-foreground">
@@ -568,4 +550,6 @@ export function RasterMapViewer({
       </CardContent>
     </Card>
   );
-}
+};
+
+export default RasterMapViewer;

@@ -7,9 +7,13 @@ import { DataVisualizationArea } from "@/components/data-visualization-area";
 export default function DashboardPage() {
   return (
     <DashboardLayout>
-      <div className="flex-1 space-y-6 p-6">
-        <FileUploadSection />
-        <DataVisualizationArea />
+      <div className="flex flex-col gap-6 p-6 lg:flex-row">
+        <div className="w-full max-w-xs self-start">
+          <FileUploadSection />
+        </div>
+        <div className="flex-1">
+          <DataVisualizationArea />
+        </div>
       </div>
     </DashboardLayout>
   );
