@@ -11,8 +11,8 @@ class Settings(BaseSettings):
 
     # CORS
     ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:8080",
+        "http://localhost:3000",  # front-end
+        "http://localhost:8080",  # back-end
     ]
 
     # App
