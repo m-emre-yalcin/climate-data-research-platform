@@ -62,6 +62,7 @@ export function TimeSeriesChart({
     scenarios: [],
     regions: [],
   });
+
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -337,66 +338,32 @@ export function TimeSeriesChart({
           </div>
 
           {/* Filter Selects */}
-          {filterOptions?.models?.length > 0 && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Model:</label>
-              <Select
-                value={filters.model}
-                onValueChange={(v) => setFilters({ ...filters, model: v })}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder={filterOptions?.models?.[0]} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filterOptions.models.map((m: string) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {filterOptions.scenarios.length > 0 && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Scenario:</label>
-              <Select
-                value={filters.scenario}
-                onValueChange={(v) => setFilters({ ...filters, scenario: v })}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder={filterOptions?.scenarios?.[0]} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filterOptions.scenarios.map((s: string) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {filterOptions.regions.length > 0 && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Region:</label>
-              <Select
-                value={filters.region}
-                onValueChange={(v) => setFilters({ ...filters, region: v })}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder={filterOptions?.regions?.[0]} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filterOptions.regions.map((r: string) => (
-                    <SelectItem key={r} value={r}>
-                      {r}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {Object.keys(filterOptions).map((filterKey) => {
+            const filterData = filterOptions
+              ? filterOptions[filterKey as any] || {}
+              : {};
+
+            return (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">{filterKey}:</label>
+                <Select
+                  value={filterData}
+                  onValueChange={(v) => setFilters({ ...filters, model: v })}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder={filterData[0]} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filterData.map((m: string) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })}
 
           <Separator orientation="vertical" className="h-6" />
 
