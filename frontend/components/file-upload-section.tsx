@@ -23,6 +23,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { getAuthToken } from "@/lib/utils";
+import { backend } from "@/lib/fetch";
 
 interface UploadedFile {
   name: string;
@@ -56,7 +57,6 @@ interface UploadedFile {
 export function FileUploadSection() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!getAuthToken());
 
   // Simple login function
   const handleLogin = async () => {
@@ -133,29 +133,23 @@ export function FileUploadSection() {
         );
 
         // Upload to appropriate endpoint
-        const endpoint =
-          fileType === "csv" ? "/api/v1/upload/csv" : "/api/v1/upload/raster";
-        const uploadResponse = await fetch(`http://localhost:8000${endpoint}`, {
+        const endpoint = fileType === "csv" ? "/upload/csv" : "/upload/raster";
+
+        const uploadResponse = await backend(endpoint, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
           body: formData,
+          requireAuth: true,
         });
 
-        if (!uploadResponse.ok) {
-          if (uploadResponse.status == 401) {
-            setIsLoggedIn(false);
-          }
-
-          const errorData = await uploadResponse.json();
+        if (!uploadResponse?.ok) {
+          const errorData = uploadResponse?.data as any;
           throw new Error(
             errorData.detail ||
-              `Upload failed with status ${uploadResponse.status}`
+              `Upload failed with status ${uploadResponse?.status}`
           );
         }
 
-        const uploadResult = await uploadResponse.json();
+        const uploadResult = uploadResponse.data as any;
 
         // Update status to processing
         setUploadedFiles((prev) =>
@@ -261,35 +255,6 @@ export function FileUploadSection() {
       Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
     );
   };
-
-  // If not logged in, show login interface
-  if (!isLoggedIn) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Authentication Required
-          </CardTitle>
-          <CardDescription>
-            Please login to access the data upload functionality
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center p-8">
-            <div className="rounded-full bg-muted p-4 w-16 h-16 mx-auto mb-4">
-              <AlertCircle className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium mb-2">Login Required</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Default credentials: researcher / climate123
-            </p>
-            <Button onClick={handleLogin}>Login to Continue</Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

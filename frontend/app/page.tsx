@@ -1,3 +1,5 @@
+"use client";
+
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { FileUploadSection } from "@/components/file-upload-section";
 import { DataVisualizationArea } from "@/components/data-visualization-area";

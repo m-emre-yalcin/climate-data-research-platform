@@ -12,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TimeSeriesChart } from "@/components/time-series-chart";
-import { ChartGallery } from "@/components/chart-gallery";
-import { DataStatistics } from "@/components/data-statistics";
 import { RasterMapViewer } from "@/components/raster-map-viewer";
 import { SpatialAnalysisTools } from "@/components/spatial-analysis-tools";
 import {
@@ -27,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { getAuthToken } from "@/lib/utils";
+import { backend } from "@/lib/fetch";
 
 // This interface defines the structure for a processed file in the frontend state
 interface ProcessedFile {
@@ -44,7 +43,7 @@ interface ProcessedFile {
   };
 }
 
-export function DataVisualizationArea({ key }: { key: number }) {
+export function DataVisualizationArea() {
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<ProcessedFile | null>(null);
   const [activeTab, setActiveTab] = useState("timeseries");
@@ -53,30 +52,20 @@ export function DataVisualizationArea({ key }: { key: number }) {
   // Fetch data from the backend when the component mounts
   useEffect(() => {
     const fetchData = async () => {
-      const token = getAuthToken();
-      if (!token) {
-        // Handle case where user is not authenticated
-        // You might want to redirect to a login page or show a message
-        console.warn("No authentication token found.");
-        return;
-      }
-
-      const headers = {
-        Authorization: `Bearer ${token}`,
-      };
-
       const files: ProcessedFile[] = [];
 
       try {
         // Concurrently fetch both CSV and Raster data availability
         const [csvResponse, rasterResponse] = await Promise.all([
-          fetch("http://localhost:8000/api/v1/data/csv", { headers }),
-          fetch("http://localhost:8000/api/v1/data/raster", { headers }),
+          backend("/data/csv", {
+            query: { page: 1, page_size: 10000 },
+          }),
+          backend("/data/raster"),
         ]);
 
         // Process CSV data if available
-        if (csvResponse.ok) {
-          const csvData = await csvResponse.json();
+        if (csvResponse?.ok) {
+          const csvData = csvResponse.data as any;
           files.push({
             name: "processed_timeseries.csv", // API doesn't provide filename here, using a placeholder
             type: "csv",
@@ -92,8 +81,8 @@ export function DataVisualizationArea({ key }: { key: number }) {
         }
 
         // Process Raster data if available
-        if (rasterResponse.ok) {
-          const rasterData = await rasterResponse.json();
+        if (rasterResponse?.ok) {
+          const rasterData = rasterResponse.data as any;
           files.push({
             name: "processed_spatial.nc", // API doesn't provide filename here, using a placeholder
             type: "nc",
@@ -119,9 +108,6 @@ export function DataVisualizationArea({ key }: { key: number }) {
     };
 
     fetchData();
-    // NOTE: To refresh data after a new upload, you'll need to trigger this effect.
-    // One way is to pass a 'refreshKey' prop from the parent component that changes
-    // after an upload is complete, and add it to the dependency array below.
   }, []);
 
   // Dummy function for file removal as requested.

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, BarChart3, CloudRain } from "lucide-react";
 import Link from "next/link";
+import { backend } from "@/lib/fetch";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -26,24 +27,22 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const response = await backend("/auth/login", {
+        requireAuth: false,
         method: "POST",
-        headers: {
-          "Content-Type": "application/json", // <- JSON here
-        },
-        body: JSON.stringify({
+        body: {
           username: formData.username,
           password: formData.password,
-        }),
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      console.log({ response });
+      if (response?.ok) {
+        const data = response.data as any;
         localStorage.setItem("auth_token", data.access_token);
         window.location.href = "/";
       } else {
-        const errorData = await response.json();
-        setError(errorData?.detail?.message || "Login failed");
+        throw new Error(response?.data as any);
       }
     } catch (err) {
       console.error(err);
