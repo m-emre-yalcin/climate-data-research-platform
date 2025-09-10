@@ -11,7 +11,9 @@ router = APIRouter()
 
 @router.get("/timeseries", response_model=TimeseriesResponse)
 async def get_timeseries_data(
-    column: Optional[str] = Query(None, description="Column to visualize"),
+    columns: List[str] = Query(
+        None, description="Columns to visualize (multiple allowed)"
+    ),
     model: Optional[str] = Query(None, description="Filter by model"),
     scenario: Optional[str] = Query(None, description="Filter by scenario"),
     region: Optional[str] = Query(None, description="Filter by region"),
@@ -22,7 +24,7 @@ async def get_timeseries_data(
     viz_service = VisualizationService(data_repo)
 
     return viz_service.get_timeseries_data(
-        column=column, model=model, scenario=scenario, region=region
+        columns=columns, model=model, scenario=scenario, region=region
     )
 
 

@@ -12,7 +12,7 @@ class VisualizationService:
 
     def get_timeseries_data(
         self,
-        column: Optional[str] = None,
+        columns: Optional[List[str]] = None,
         model: Optional[str] = None,
         scenario: Optional[str] = None,
         region: Optional[str] = None,
@@ -51,39 +51,43 @@ class VisualizationService:
         # Select columns for visualization
         date_col = date_cols[0]
 
-        if column and column in numeric_cols:
-            value_col = column
-        elif "value" in numeric_cols:
-            value_col = "value"
+        if columns:
+            value_cols = [col for col in columns if col in numeric_cols]
+            if not value_cols:
+                raise DataProcessingError("No valid columns selected")
         else:
-            value_col = numeric_cols[0]
+            if "value" in numeric_cols:
+                value_cols = ["value"]
+            else:
+                value_cols = [numeric_cols[0]]
 
         # Prepare visualization data
         if len(df_filtered) > 0:
-            viz_data = df_filtered.groupby(date_col)[value_col].sum().reset_index()
-            viz_data = viz_data.sort_values(date_col)
+            agg_df = df_filtered.groupby(date_col)[value_cols].sum().reset_index()
+            agg_df = agg_df.sort_values(date_col)
 
-            # Format dates for display
+            # Format dates for display (convert year to YYYY-01-01 for parsable dates)
             if date_col == "year":
-                x_axis = viz_data[date_col].astype(str).tolist()
-            else:
-                x_axis = (
-                    pd.to_datetime(viz_data[date_col]).dt.strftime("%Y-%m-%d").tolist()
+                agg_df[date_col] = pd.to_datetime(
+                    agg_df[date_col].astype(int).astype(str) + "-01-01"
                 )
+            else:
+                agg_df[date_col] = pd.to_datetime(agg_df[date_col])
 
-            y_axis = viz_data[value_col].tolist()
+            x_axis = agg_df[date_col].dt.strftime("%Y-%m-%d").tolist()
+            y_axes = {col: agg_df[col].tolist() for col in value_cols}
         else:
             x_axis = []
-            y_axis = []
+            y_axes = {col: [] for col in value_cols}
 
         # Get filter options
         filter_options = self.get_available_filters()
 
         return TimeseriesResponse(
             x_axis=x_axis,
-            y_axis=y_axis,
+            y_axes=y_axes,
             x_label=date_col,
-            y_label=value_col,
+            y_labels=value_cols,
             available_columns=numeric_cols,
             filter_options=filter_options,
             data_count=len(df_filtered),
