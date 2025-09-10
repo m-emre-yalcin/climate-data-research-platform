@@ -34,12 +34,6 @@ climate_data_platform_backend/
 │   │   ├── raster_service.py # Raster data operations
 │   │   └── visualization_service.py # Visualization logic
 │   │
-│   ├── models/               # Data models
-│   │   ├── __init__.py
-│   │   ├── auth.py           # Auth-related models
-│   │   ├── data.py           # Data models
-│   │   └── visualization.py  # Visualization models
-│   │
 │   ├── schemas/              # Pydantic schemas
 │   │   ├── __init__.py
 │   │   ├── auth.py           # Auth schemas

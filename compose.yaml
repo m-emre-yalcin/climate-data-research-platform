@@ -9,9 +9,10 @@ services:
       - SECRET_KEY=secret
       - ENVIRONMENT=development
     volumes:
+      # Mount the backend folder:
+      - ./backend:/app
       - ./data:/app/data
       - ./uploads:/app/uploads
-      - .:/app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -22,7 +23,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
     depends_on:
