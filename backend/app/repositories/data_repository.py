@@ -31,6 +31,9 @@ class DataRepository:
         return cls.data_store["raster_data"]
 
     @classmethod
-    def clear_all_data(cls):
-        for key in cls.data_store:
-            cls.data_store[key] = None
+    def clear_data_by_key(cls, clear_data_by_key: str):
+        if clear_data_by_key in cls.data_store:
+            cls.data_store[clear_data_by_key] = None
+
+            if clear_data_by_key == "csv_data":
+                cls.data_store["cleaning_report"] = None
