@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   LineChart,
   Line,
@@ -33,50 +26,70 @@ import {
   ResponsiveContainer,
   Brush,
 } from "recharts";
-import { TrendingUp, Maximize2, Download } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { backend } from "@/lib/fetch";
 
 interface TimeSeriesChartProps {
   title?: string;
-  description?: string;
 }
 
 type ChartType = "line" | "area" | "scatter";
 
 export function TimeSeriesChart({
   title = "Time Series Analysis",
-  description,
 }: TimeSeriesChartProps) {
   const [chartType, setChartType] = useState<ChartType>("line");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [dateColumn, setDateColumn] = useState<string>("");
   const [showBrush, setShowBrush] = useState(true);
-  const [showGrid, setShowGrid] = useState(true);
   const [filters, setFilters] = useState({
     model: "",
     scenario: "",
     region: "",
   });
+  const [pendingFilters, setPendingFilters] = useState(filters);
   const [filterOptions, setFilterOptions] = useState({
     models: [],
     scenarios: [],
     regions: [],
   });
-
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load saved filters from localStorage on mount
+  useEffect(() => {
+    const savedFilters = localStorage.getItem("timeSeriesFilters");
+    if (savedFilters) {
+      const parsedFilters = JSON.parse(savedFilters);
+      setFilters(parsedFilters);
+      setPendingFilters(parsedFilters);
+    }
+  }, []);
+
+  // Save filters to localStorage when they are applied
+  useEffect(() => {
+    localStorage.setItem("timeSeriesFilters", JSON.stringify(filters));
+  }, [filters]);
+
+  // Fetch data based on applied filters and selected columns
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const params = new URLSearchParams();
-      if (filters.model) params.append("model", filters.model);
-      if (filters.scenario) params.append("scenario", filters.scenario);
-      if (filters.region) params.append("region", filters.region);
+
+      // Append all defined filters to the request:
+      for (const filterKey of Object.keys(filters)) {
+        const filterValue = filters[filterKey as keyof typeof filters] as any;
+        if (filterValue) {
+          params.append(filterKey, filterValue);
+        }
+      }
+
       selectedColumns.forEach((col) => params.append("columns", col));
       const endpoint = `/data/visualization/timeseries?${params.toString()}`;
       const response = await backend(endpoint);
+
       if (response.ok) {
         const resData = response.data;
         const reconstructedData = resData.x_axis.map((x: string, i: number) => {
@@ -86,6 +99,7 @@ export function TimeSeriesChart({
           });
           return row;
         });
+
         setChartData(reconstructedData);
         setAvailableColumns(resData.available_columns);
         setFilterOptions(resData.filter_options);
@@ -93,15 +107,13 @@ export function TimeSeriesChart({
         if (selectedColumns.length === 0) {
           setSelectedColumns(resData.y_labels);
         }
-      } else {
-        // Handle error (e.g., setChartData([]))
       }
       setLoading(false);
     };
     fetchData();
-  }, [filters.model, filters.scenario, filters.region, selectedColumns]);
+  }, [filters, selectedColumns, dateColumn]);
 
-  // Extract columns and detect date/numeric columns (adapted for fetched data)
+  // Process data for charting
   const { dateColumns, numericColumns, processedData } = useMemo(() => {
     if (chartData.length === 0) {
       return { dateColumns: [], numericColumns: [], processedData: [] };
@@ -110,7 +122,6 @@ export function TimeSeriesChart({
     const sampleRow = chartData[0];
     const allColumns = Object.keys(sampleRow);
 
-    // Detect date columns
     const dateColumns = allColumns.filter((col) => {
       const value = sampleRow[col];
       if (!value) return false;
@@ -126,10 +137,7 @@ export function TimeSeriesChart({
       );
     });
 
-    // Numeric columns from availableColumns (from API)
     const numericColumns = availableColumns;
-
-    // Process data for charting
     const processedData = chartData.map((row, index) => {
       const processed: any = { index };
       dateColumns.forEach((col) => {
@@ -149,13 +157,7 @@ export function TimeSeriesChart({
     return { dateColumns, numericColumns, processedData };
   }, [chartData, availableColumns]);
 
-  const chartColors = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-  ];
+  const chartColors = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
   const formatXAxisTick = (tickItem: any) => {
     if (dateColumn && tickItem) {
@@ -196,7 +198,7 @@ export function TimeSeriesChart({
   const renderChart = () => {
     const commonProps = {
       data: processedData,
-      margin: { top: 5, right: 30, left: 20, bottom: 5 },
+      margin: { top: 5, right: 20, left: 10, bottom: 5 },
     };
 
     const xAxisProps = {
@@ -211,9 +213,7 @@ export function TimeSeriesChart({
       case "area":
         return (
           <AreaChart {...commonProps}>
-            {showGrid && (
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-            )}
+            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis {...xAxisProps} />
             <YAxis />
             <Tooltip content={<CustomTooltip />} />
@@ -236,9 +236,7 @@ export function TimeSeriesChart({
       case "scatter":
         return (
           <ScatterChart {...commonProps}>
-            {showGrid && (
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-            )}
+            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis {...xAxisProps} />
             <YAxis />
             <Tooltip content={<CustomTooltip />} />
@@ -253,12 +251,10 @@ export function TimeSeriesChart({
           </ScatterChart>
         );
 
-      default: // line
+      default:
         return (
           <LineChart {...commonProps}>
-            {showGrid && (
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-            )}
+            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis {...xAxisProps} />
             <YAxis />
             <Tooltip content={<CustomTooltip />} />
@@ -280,13 +276,17 @@ export function TimeSeriesChart({
     }
   };
 
+  const handleApplyFilters = () => {
+    setFilters(pendingFilters);
+  };
+
   if (loading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-96">
+        <CardContent className="flex items-center justify-center h-80">
           <div className="text-center">
-            <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Loading Data...</h3>
+            <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-base">Loading...</p>
           </div>
         </CardContent>
       </Card>
@@ -296,98 +296,80 @@ export function TimeSeriesChart({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              {title}
-            </CardTitle>
-            {description && <CardDescription>{description}</CardDescription>}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm">
-              <Maximize2 className="h-4 w-4 mr-2" />
-              Fullscreen
-            </Button>
-          </div>
-        </div>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <TrendingUp className="h-4 w-4" />
+          {title}
+        </CardTitle>
       </CardHeader>
-
       <CardContent className="space-y-4">
-        {/* Chart Controls */}
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/50 rounded-lg">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">Chart Type:</label>
+            <label className="text-sm font-medium">Chart:</label>
             <Select
               value={chartType}
               onValueChange={(value: ChartType) => setChartType(value)}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="line">Line Chart</SelectItem>
-                <SelectItem value="area">Area Chart</SelectItem>
-                <SelectItem value="scatter">Scatter Plot</SelectItem>
+                <SelectItem value="line">Line</SelectItem>
+                <SelectItem value="area">Area</SelectItem>
+                <SelectItem value="scatter">Scatter</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Filter Selects */}
-          {Object.keys(filterOptions).map((filterKey) => {
-            const filterData = filterOptions
-              ? filterOptions[filterKey as any] || {}
-              : {};
+          {/* Dynamic filter rendering */}
+          {Object.entries(filterOptions).map(([filterKey, options]) => (
+            <div key={filterKey} className="flex items-center gap-2">
+              <label className="text-sm font-medium capitalize">
+                {filterKey}:
+              </label>
 
-            return (
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">{filterKey}:</label>
-                <Select
-                  value={filterData}
-                  onValueChange={(v) => setFilters({ ...filters, model: v })}
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder={filterData[0]} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filterData.map((m: string) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            );
-          })}
-
-          <Separator orientation="vertical" className="h-6" />
-
+              <Select
+                value={pendingFilters[filterKey as keyof typeof pendingFilters]}
+                onValueChange={(value) =>
+                  setPendingFilters({ ...pendingFilters, [filterKey]: value })
+                }
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder={filterKey} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem key={null} value={undefined}>
+                    Empty
+                  </SelectItem>
+                  {(options as string[]).map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+          <Button
+            size="sm"
+            onClick={handleApplyFilters}
+            disabled={
+              JSON.stringify(filters) === JSON.stringify(pendingFilters)
+            }
+          >
+            Apply
+          </Button>
           <div className="flex items-center gap-2">
-            <Button
-              variant={showGrid ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowGrid(!showGrid)}
-            >
-              Grid
-            </Button>
-            <Button
-              variant={showBrush ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowBrush(!showBrush)}
-            >
-              Zoom
-            </Button>
+            <label className="text-sm font-medium">Zoom:</label>
+            <input
+              type="checkbox"
+              checked={showBrush}
+              onChange={() => setShowBrush(!showBrush)}
+              className="h-4 w-4"
+            />
           </div>
         </div>
-
-        {/* Column Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Data Series:</label>
+          <label className="text-sm font-medium">Series:</label>
           <div className="flex flex-wrap gap-2">
             {availableColumns.map((column) => (
               <Badge
@@ -396,63 +378,37 @@ export function TimeSeriesChart({
                   selectedColumns.includes(column) ? "default" : "outline"
                 }
                 className="cursor-pointer"
-                onClick={() => {
-                  if (selectedColumns.includes(column)) {
-                    setSelectedColumns(
-                      selectedColumns.filter((col) => col !== column)
-                    );
-                  } else {
-                    setSelectedColumns([...selectedColumns, column]);
-                  }
-                }}
+                onClick={() =>
+                  setSelectedColumns(
+                    selectedColumns.includes(column)
+                      ? selectedColumns.filter((col) => col !== column)
+                      : [...selectedColumns, column]
+                  )
+                }
               >
                 {column}
               </Badge>
             ))}
           </div>
         </div>
-
-        {/* Chart */}
         {chartData.length === 0 ? (
           <Card>
-            <CardContent className="flex items-center justify-center h-96">
+            <CardContent className="flex items-center justify-center h-80">
               <div className="text-center">
-                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Data Available</h3>
-                <p className="text-muted-foreground">
+                <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-base">No Data Available</p>
+                <p className="text-sm text-muted-foreground">
                   Adjust filters or check data source
                 </p>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <>
-            <div className="h-96">
-              <ResponsiveContainer width="100%" height="100%">
-                {renderChart()}
-              </ResponsiveContainer>
-            </div>
-
-            {/* Chart Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-              <div className="text-center">
-                <p className="text-2xl font-bold">{processedData.length}</p>
-                <p className="text-sm text-muted-foreground">Data Points</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold">{selectedColumns.length}</p>
-                <p className="text-sm text-muted-foreground">Series</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold">{dateColumns.length}</p>
-                <p className="text-sm text-muted-foreground">Date Columns</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold">{availableColumns.length}</p>
-                <p className="text-sm text-muted-foreground">Numeric Columns</p>
-              </div>
-            </div>
-          </>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              {renderChart()}
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
