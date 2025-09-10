@@ -137,6 +137,7 @@ export function DataVisualizationArea() {
             </Button>
           </div>
         </CardHeader>
+
         <CardContent>
           <Tabs defaultValue="timeseries" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
@@ -160,6 +161,7 @@ export function DataVisualizationArea() {
                 Analysis
               </TabsTrigger>
             </TabsList>
+
             <TabsContent value="timeseries" className="mt-6">
               <div className="h-96 border-2 border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
                 <div className="text-center">
