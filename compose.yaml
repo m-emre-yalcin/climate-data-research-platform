@@ -1,10 +1,8 @@
-version: "3.8"
-
 services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -22,7 +20,9 @@ services:
       retries: 3
 
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "3000:3000"
     depends_on:
