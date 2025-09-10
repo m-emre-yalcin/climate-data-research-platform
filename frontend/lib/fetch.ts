@@ -34,7 +34,7 @@ export const backend = async (
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (body) {
+  if (body && !(body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
@@ -42,7 +42,12 @@ export const backend = async (
     const response = await fetch(url.toString(), {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        body instanceof FormData
+          ? body
+          : body
+          ? JSON.stringify(body)
+          : undefined,
     });
 
     if (response.status === 401 && requireAuth) {

@@ -49,86 +49,47 @@ export function DataVisualizationArea() {
   const [activeTab, setActiveTab] = useState("timeseries");
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch data from the backend when the component mounts
   useEffect(() => {
-    const fetchData = async () => {
-      const files: ProcessedFile[] = [];
+    const listener = (event: StorageEvent) => {
+      console.log("Storage changed", event);
 
-      try {
-        // Concurrently fetch both CSV and Raster data availability
-        const [csvResponse, rasterResponse] = await Promise.all([
-          backend("/data/csv", {
-            query: { page: 1, page_size: 10000 },
-          }),
-          backend("/data/raster"),
-        ]);
-
-        // Process CSV data if available
-        if (csvResponse?.ok) {
-          const csvData = csvResponse.data as any;
-          files.push({
-            name: "processed_timeseries.csv", // API doesn't provide filename here, using a placeholder
-            type: "csv",
-            data: csvData.data,
-            metadata: {
-              rows: csvData.shape?.[0],
-              columns: csvData.shape?.[1],
-              headers: csvData.columns,
-              issues: csvData.cleaning_report?.issues_found || [],
-              cleaningSteps: csvData.cleaning_report?.fixes_applied || [],
-            },
-          });
-        }
-
-        // Process Raster data if available
-        if (rasterResponse?.ok) {
-          const rasterData = rasterResponse.data as any;
-          files.push({
-            name: "processed_spatial.nc", // API doesn't provide filename here, using a placeholder
-            type: "nc",
-            data: rasterData, // The entire info object is used by the components
-            metadata: {
-              variables: rasterData.variables,
-              dimensions: rasterData.dimensions,
-              issues: [], // Raster processing in API doesn't report issues
-            },
-          });
-        }
-
-        setProcessedFiles(files);
-        if (files.length > 0) {
-          setSelectedFile(files[0]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch data from backend:", err);
-        setError(
-          "Could not connect to the data server. Please try again later."
-        );
-      }
+      const processedFiles = JSON.parse(
+        localStorage.getItem("processedFiles") || "[]"
+      );
+      setProcessedFiles(processedFiles);
     };
 
-    fetchData();
+    window.addEventListener("storage", listener);
+
+    return () => {
+      window.removeEventListener("storage", listener);
+    };
   }, []);
 
-  // Dummy function for file removal as requested.
-  // In a real application, you would implement a DELETE request to the backend.
-  const handleRemoveFile = (fileName: string) => {
-    console.log(
-      `Request to remove file: ${fileName}. Implement backend logic for this.`
-    );
-    // This is a dummy implementation to update the UI instantly.
-    const updatedFiles = processedFiles.filter(
-      (file) => file.name !== fileName
-    );
-    setProcessedFiles(updatedFiles);
-    if (selectedFile?.name === fileName) {
-      setSelectedFile(updatedFiles.length > 0 ? updatedFiles[0] : null);
+  useEffect(() => {
+    if (
+      localStorage.getItem("processedFiles") !== JSON.stringify(processedFiles)
+    ) {
+      localStorage.setItem("processedFiles", JSON.stringify(processedFiles));
     }
-  };
+  }, [processedFiles]);
 
-  const handleCreateChart = (config: any) => {
-    console.log("Creating chart with config:", config);
-    // In a real app, this would create a new chart instance
+  const handleRemoveFile = async (fileName: string) => {
+    console.log(`Removing file: ${fileName}.`);
+
+    const dataKey = fileName.endsWith("csv") ? "csv_data" : "raster_data";
+    await backend(`/data/clear/${dataKey}`, {
+      method: "DELETE",
+    }).then(() => {
+      const updatedFiles = processedFiles.filter(
+        (file) => file.name !== fileName
+      );
+
+      setProcessedFiles(updatedFiles);
+      if (selectedFile?.name === fileName) {
+        setSelectedFile(updatedFiles.length > 0 ? updatedFiles[0] : null);
+      }
+    });
   };
 
   const handleAnalysisComplete = (results: any) => {

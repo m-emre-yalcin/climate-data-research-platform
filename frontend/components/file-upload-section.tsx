@@ -58,11 +58,6 @@ export function FileUploadSection() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Simple login function
-  const handleLogin = async () => {
-    window.location.href = "/login";
-  };
-
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -227,8 +222,9 @@ export function FileUploadSection() {
           // Trigger storage event for other components
           window.dispatchEvent(new Event("storage"));
         }, 1000);
-      } catch (error) {
-        console.error("File processing error:", error);
+      } catch (error: any) {
+        console.error("File processing error:", error?.message);
+
         setUploadedFiles((prev) =>
           prev.map((f) =>
             f.name === file.name
