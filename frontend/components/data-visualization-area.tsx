@@ -24,7 +24,6 @@ import {
   Layers,
   X,
 } from "lucide-react";
-import { getAuthToken } from "@/lib/utils";
 import { backend } from "@/lib/fetch";
 
 // This interface defines the structure for a processed file in the frontend state
@@ -44,7 +43,9 @@ interface ProcessedFile {
 }
 
 export function DataVisualizationArea() {
-  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
+  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>(
+    JSON.parse((localStorage.getItem("processedFiles") as any) || "{}")
+  );
   const [selectedFile, setSelectedFile] = useState<ProcessedFile | null>(null);
   const [activeTab, setActiveTab] = useState("timeseries");
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +68,12 @@ export function DataVisualizationArea() {
   }, []);
 
   useEffect(() => {
+    const localProcessedFiles = JSON.stringify(processedFiles);
     if (
-      localStorage.getItem("processedFiles") !== JSON.stringify(processedFiles)
+      processedFiles.length > 0 &&
+      localProcessedFiles !== localStorage.getItem("processedFiles")
     ) {
-      localStorage.setItem("processedFiles", JSON.stringify(processedFiles));
+      localStorage.setItem("processedFiles", localProcessedFiles);
     }
   }, [processedFiles]);
 
