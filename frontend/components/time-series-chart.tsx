@@ -256,7 +256,7 @@ export function TimeSeriesChart({
           <LineChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
             <XAxis {...xAxisProps} />
-            <YAxis />
+            <YAxis fontSize={8} allowDataOverflow />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             {selectedColumns.map((column, index) => (
