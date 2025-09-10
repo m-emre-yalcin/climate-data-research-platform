@@ -25,7 +25,7 @@ class DataSummary(BaseModel):
 
 
 class TimeseriesRequest(BaseModel):
-    column: Optional[str] = None
+    columns: Optional[List[str]] = None
     model: Optional[str] = None
     scenario: Optional[str] = None
     region: Optional[str] = None
@@ -33,9 +33,9 @@ class TimeseriesRequest(BaseModel):
 
 class TimeseriesResponse(BaseModel):
     x_axis: List[str]
-    y_axis: List[float]
+    y_axes: Dict[str, List[float]]
     x_label: str
-    y_label: str
+    y_labels: List[str]
     available_columns: List[str]
     filter_options: Dict[str, List[str]]
     data_count: int
