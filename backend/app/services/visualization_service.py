@@ -51,10 +51,13 @@ class VisualizationService:
         # Select columns for visualization
         date_col = date_cols[0]
 
+        # Exclude date_col from numeric_cols and available_columns
+        numeric_cols = [col for col in numeric_cols if col != date_col]
+
         if columns:
             value_cols = [col for col in columns if col in numeric_cols]
             if not value_cols:
-                raise DataProcessingError("No valid columns selected")
+                raise DataProcessingError("No valid numeric columns selected")
         else:
             if "value" in numeric_cols:
                 value_cols = ["value"]
