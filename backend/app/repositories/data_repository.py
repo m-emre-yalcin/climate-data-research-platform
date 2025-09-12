@@ -1,39 +1,122 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import pandas as pd
+import json
+from pathlib import Path
 
 
 class DataRepository:
-    data_store = {
-        "csv_data": None,
-        "raster_data": None,
-        "cleaning_report": None,
-    }
+    UPLOADS_DIR = Path.cwd() / "app/uploads"
 
     @classmethod
-    def store_csv_data(cls, df: pd.DataFrame, cleaning_report: Dict[str, Any]) -> None:
-        cls.data_store["csv_data"] = df
-        cls.data_store["cleaning_report"] = cleaning_report
+    def _get_file_path(cls, username: Optional[str], filename: str) -> Path:
+        """Generate file path with username_filename convention"""
+        return (
+            cls.UPLOADS_DIR / f"{username}_{filename}"
+            if username and filename
+            else cls.UPLOADS_DIR / filename
+        )
 
     @classmethod
-    def get_csv_data(cls) -> Optional[pd.DataFrame]:
-        return cls.data_store["csv_data"]
+    def _get_metadata_path(cls, username: str, filename: str) -> Path:
+        """Generate metadata file path"""
+        base_name = f"{username}_{filename}"
+        return cls.UPLOADS_DIR / f"{base_name}.metadata.json"
 
     @classmethod
-    def get_cleaning_report(cls) -> Optional[Dict[str, Any]]:
-        return cls.data_store["cleaning_report"]
+    def store_csv_data(
+        cls,
+        df: pd.DataFrame,
+        cleaning_report: Dict[str, Any],
+        file_metadata: Dict[str, Any],
+    ) -> None:
+        """Store cleaning report and metadata (CSV file already saved)"""
+        metadata_path = cls._get_metadata_path(
+            file_metadata["username"], file_metadata["filename"]
+        )
+
+        metadata_content = {
+            "file_metadata": file_metadata,
+            "cleaning_report": cleaning_report,
+        }
+
+        with open(metadata_path, "w") as f:
+            json.dump(metadata_content, f, indent=2)
+
+    @classmethod
+    def get_csv_data(
+        cls, username: Optional[str], filename: str
+    ) -> Optional[pd.DataFrame]:
+        """Read CSV data from filesystem"""
+        file_path = cls._get_file_path(username, filename)
+        if file_path.exists():
+            return pd.read_csv(file_path)
+        return None
+
+    @classmethod
+    def get_cleaning_report(
+        cls, username: Optional[str], filename: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get cleaning report from metadata file"""
+        metadata_path = cls._get_metadata_path(username, filename)
+        if metadata_path.exists():
+            with open(metadata_path, "r") as f:
+                metadata = json.load(f)
+                return metadata.get("cleaning_report")
+        return None
 
     @classmethod
     def store_raster_data(cls, raster_info: Dict[str, Any]) -> None:
-        cls.data_store["raster_data"] = raster_info
+        """Store raster metadata (raster file already saved)"""
+        metadata = raster_info.get("metadata", {})
+        metadata_path = cls._get_metadata_path(
+            metadata["username"], metadata["filename"]
+        )
+
+        with open(metadata_path, "w") as f:
+            json.dump(raster_info, f, indent=2)
 
     @classmethod
-    def get_raster_data(cls) -> Optional[Dict[str, Any]]:
-        return cls.data_store["raster_data"]
+    def get_raster_data(
+        cls, username: Optional[str], filename: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get raster metadata from file"""
+        metadata_path = cls._get_metadata_path(username, filename)
+        if metadata_path.exists():
+            with open(metadata_path, "r") as f:
+                return json.load(f)
+        return None
 
     @classmethod
-    def clear_data_by_key(cls, clear_data_by_key: str):
-        if clear_data_by_key in cls.data_store:
-            cls.data_store[clear_data_by_key] = None
+    def get_netcdf_file_content(cls, username: str, filename: str) -> Optional[bytes]:
+        """Get NetCDF file content as bytes"""
+        file_path = cls._get_file_path(username, filename)
+        if file_path.exists() and file_path.suffix == ".nc":
+            try:
+                with open(file_path, "rb") as f:
+                    return f.read()
+            except OSError:
+                pass
+        return None
 
-            if clear_data_by_key == "csv_data":
-                cls.data_store["cleaning_report"] = None
+    @classmethod
+    def get_user_filenames(cls, username: str) -> List[str]:
+        """Get list of full filenames (username_filename) for a specific user"""
+        filenames = []
+        pattern = f"{username}_*"
+        for file_path in cls.UPLOADS_DIR.glob(pattern):
+            if not file_path.name.endswith(".metadata.json"):
+                filenames.append(file_path.name)
+        return filenames
+
+    @classmethod
+    def clear_data_by_filename(cls, username: str, filename: str):
+        """Delete file and metadata for specific user's filename"""
+        file_path = cls._get_file_path(username, filename)
+        metadata_path = cls._get_metadata_path(username, filename)
+
+        for path in [file_path, metadata_path]:
+            if path.exists():
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
