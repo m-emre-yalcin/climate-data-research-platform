@@ -52,7 +52,11 @@ export const backend = async (
 
     if (response.status === 401 && requireAuth) {
       window.location.href = "/login";
-      return;
+      return {
+        data: null,
+        ok: false,
+        status: null,
+      };
     }
 
     return {
