@@ -12,16 +12,19 @@ logger = logging.getLogger(__name__)
 class VisualizationService:
     """Service for processing and preparing data for visualization."""
 
-    def __init__(self, data_repo: DataRepository, filename: str):
+    def __init__(self, data_repo: DataRepository, filename: str, username: str):
         self.data_repo = data_repo
         self.filename = filename
+        self.username = username
 
     def get_timeseries_data(self, **filters: Optional[str]) -> TimeseriesResponse:
         """
         Generate timeseries data for visualization by filtering and aggregating the dataset.
         """
         try:
-            df = self.data_repo.get_csv_data(filename=self.filename)
+            df = self.data_repo.get_csv_data(
+                filename=self.filename, username=self.username
+            )
             if df is None or df.empty:
                 raise DataNotFoundError("No CSV data available")
 
@@ -96,7 +99,9 @@ class VisualizationService:
     def get_available_filters(self) -> Dict[str, List[str]]:
         """Get unique, sorted values for all potential filter columns."""
         try:
-            df = self.data_repo.get_csv_data(filename=self.filename)
+            df = self.data_repo.get_csv_data(
+                filename=self.filename, username=self.username
+            )
             if df is None or df.empty:
                 return {}
 

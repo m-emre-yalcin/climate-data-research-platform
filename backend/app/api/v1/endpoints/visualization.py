@@ -35,7 +35,11 @@ async def get_timeseries_data(
     filename: str = "",
 ) -> TimeseriesResponse:
     """Get timeseries data for visualization"""
-    viz_service = VisualizationService(data_repo, filename)
+    viz_service = VisualizationService(
+        data_repo=data_repo,
+        filename=filename,
+        username=current_user.username,
+    )
 
     return viz_service.get_timeseries_data(
         columns=columns,
@@ -116,14 +120,17 @@ async def get_raster_tile(
         }
 
 
-@router.get("/raster/metadata")
+@router.get("/raster/metadata/{filename}")
 async def get_raster_metadata(
-    current_user: User = Depends(get_current_user),
     data_repo: DataRepository = Depends(get_data_repository),
+    current_user: User = Depends(get_current_user),
+    filename: str = "",
 ) -> Dict[str, Any]:
     """Get raster dataset metadata"""
 
-    file_content = data_repo.get_netcdf_file_content()
+    file_content = data_repo.get_netcdf_file_content(
+        username=current_user.username, filename=filename
+    )
     if file_content is None:
         raise DataNotFoundError("No NetCDF file available")
 

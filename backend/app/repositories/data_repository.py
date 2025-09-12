@@ -12,7 +12,7 @@ class DataRepository:
         """Generate file path with username_filename convention"""
         return (
             cls.UPLOADS_DIR / f"{username}_{filename}"
-            if username and filename
+            if not filename.startswith(username)
             else cls.UPLOADS_DIR / filename
         )
 
@@ -21,7 +21,7 @@ class DataRepository:
         """Generate metadata file path"""
         return (
             cls.UPLOADS_DIR / f"{username}_{filename}.metadata.json"
-            if username and filename
+            if not filename.startswith(username)
             else cls.UPLOADS_DIR / f"{filename}.metadata.json"
         )
 
@@ -30,15 +30,15 @@ class DataRepository:
         cls,
         df: pd.DataFrame,
         cleaning_report: Dict[str, Any],
-        file_metadata: Dict[str, Any],
+        metadata: Dict[str, Any],
     ) -> None:
         """Store cleaning report and metadata (CSV file already saved)"""
         metadata_path = cls._get_metadata_path(
-            username=file_metadata["username"], filename=file_metadata["filename"]
+            username=metadata["username"], filename=metadata["filename"]
         )
 
         metadata_content = {
-            "file_metadata": file_metadata,
+            "metadata": metadata,
             "cleaning_report": cleaning_report,
         }
 
@@ -104,14 +104,25 @@ class DataRepository:
         return None
 
     @classmethod
-    def get_user_filenames(cls, username: str) -> List[str]:
-        """Get list of full filenames (username_filename) for a specific user"""
-        filenames = []
-        pattern = f"{username}_*"
+    def get_user_files(cls, username: str) -> List[Dict[str, Any]]:
+        """Get list of files (list of file metadatas) for a specific user"""
+        metadata_list = []
+        pattern = f"{username}_*.metadata.json"
         for file_path in cls.UPLOADS_DIR.glob(pattern):
-            if not file_path.name.endswith(".metadata.json"):
-                filenames.append(file_path.name)
-        return filenames
+            with open(file_path, "r") as f:
+                file_content = json.load(f)
+                metadata = file_content.get("metadata", {})
+
+                filename = metadata.get("filename")
+                file_type = metadata.get("file_type")
+                metadata = {
+                    **file_content,
+                    "name": filename,
+                    "type": file_type,
+                }
+
+                metadata_list.append(metadata)
+        return metadata_list
 
     @classmethod
     def clear_data_by_filename(cls, filename: str):

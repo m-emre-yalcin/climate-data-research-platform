@@ -20,21 +20,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/list", response_model=List[str])
+@router.get("/list", response_model=List[Dict[str, Any]])
 async def list_filenames(
     current_user: User = Depends(get_current_user),
     data_repo: DataRepository = Depends(get_data_repository),
-) -> List[str]:
+):
     """List all filenames for the current user"""
-    return data_repo.get_user_filenames(current_user.username)
+    return data_repo.get_user_files(current_user.username)
 
 
-@router.delete("/clear/{filename}")
+@router.delete("/clear/{filename}", response_model=Dict[str, str])
 async def clear_all_data(
     filename: str,
     current_user: User = Depends(get_current_user),
     data_repo: DataRepository = Depends(get_data_repository),
-) -> Dict[str, str]:
+):
     """Clear all stored data"""
     data_repo.clear_data_by_filename(filename=filename)
     return {"message": f"Data {filename} cleared successfully"}
@@ -47,7 +47,7 @@ async def get_data_summary(
     current_user: User = Depends(get_current_user),
     data_repo: DataRepository = Depends(get_data_repository),
     filename=str,
-) -> DataSummary:
+):
     """Get comprehensive summary of all loaded data"""
     summary = DataSummary()
 

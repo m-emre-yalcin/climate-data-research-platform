@@ -29,7 +29,7 @@ async def upload_csv(
     data_repo: DataRepository = Depends(get_data_repository),
 ):
     """Upload and process CSV file"""
-    if not file.filename.endswith(".csv") or not file.filename.endswith(".nc"):
+    if not (file.filename.endswith(".csv") or file.filename.endswith(".nc")):
         raise HTTPException(status_code=400, detail="File must be a CSV or NetCDF")
 
     # Check if file already exists
@@ -58,13 +58,13 @@ async def upload_csv(
                 f.write(content)
 
             # Store metadata and processed data in repository
-            file_metadata = {
+            metadata = {
                 "filename": file.filename,
                 "username": current_user.username,
                 "file_path": str(file_path),
                 "file_type": "csv",
             }
-            data_repo.store_csv_data(cleaned_df, cleaning_report, file_metadata)
+            data_repo.store_csv_data(cleaned_df, cleaning_report, metadata)
 
             return CSVUploadResponse(
                 message="CSV uploaded and processed successfully",
@@ -92,13 +92,13 @@ async def upload_csv(
                 f.write(content)
 
             # Store processed info with metadata
-            file_metadata = {
+            metadata = {
                 "filename": file.filename,
                 "username": current_user.username,
                 "file_path": str(file_path),
                 "file_type": "netcdf",
             }
-            raster_info["metadata"] = file_metadata
+            raster_info["metadata"] = metadata
             data_repo.store_raster_data(raster_info)
 
             return RasterUploadResponse(
