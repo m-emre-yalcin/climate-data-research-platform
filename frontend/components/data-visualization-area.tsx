@@ -26,20 +26,19 @@ import {
   Loader,
 } from "lucide-react";
 import { backend } from "@/lib/fetch";
+import { useProcessedFiles } from "./ProcessedFilesProvider";
 
 // This interface defines the structure for a processed file in the frontend state
 interface ProcessedFile {
   name: string;
-  type: "csv" | "nc";
+  type: "csv" | "netcdf";
   data: any; // Can be an array of objects for CSV or a raster info object for NetCDF
   cleaning_report: any;
   metadata: any;
 }
 
 export function DataVisualizationArea() {
-  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>(
-    [] as any
-  );
+  const { processedFiles, setProcessedFiles } = useProcessedFiles();
 
   const [selectedFile, setSelectedFile] = useState<ProcessedFile | null>(null);
   const [activeTab, setActiveTab] = useState("timeseries");
@@ -69,20 +68,6 @@ export function DataVisualizationArea() {
     fetchFiles();
   }, [setProcessedFiles]);
 
-  // Effect to auto-select a file when the list changes
-  useEffect(() => {
-    if (!selectedFile && processedFiles.length > 0) {
-      setSelectedFile(processedFiles[0]);
-    } else if (selectedFile) {
-      const stillExists = processedFiles.some(
-        (f) => f.name === selectedFile.name
-      );
-      if (!stillExists) {
-        setSelectedFile(processedFiles.length > 0 ? processedFiles[0] : null);
-      }
-    }
-  }, [processedFiles, selectedFile]);
-
   const handleRemoveFile = async (fileName: string) => {
     try {
       const response = (await backend(`/data/clear/${fileName}`, {
@@ -101,6 +86,15 @@ export function DataVisualizationArea() {
     } catch (err: any) {
       setError(`Error removing file: ${err.message}`);
     }
+  };
+
+  const handleSelectFile = async (file: ProcessedFile) => {
+    if (file.type === "csv") setActiveTab("timeseries");
+    if (file.type === "netcdf") setActiveTab("spatial");
+
+    requestAnimationFrame(() => {
+      setSelectedFile(file);
+    });
   };
 
   const handleAnalysisComplete = (results: any) => {
@@ -205,7 +199,7 @@ export function DataVisualizationArea() {
                             : "outline"
                         }
                         size="sm"
-                        onClick={() => setSelectedFile(file)}
+                        onClick={handleSelectFile}
                         className="flex items-center gap-2 pr-8"
                       >
                         <Database className="h-3 w-3" />
@@ -250,7 +244,7 @@ export function DataVisualizationArea() {
                             : "outline"
                         }
                         size="sm"
-                        onClick={() => setSelectedFile(file)}
+                        onClick={handleSelectFile}
                         className="flex items-center gap-2 pr-8"
                       >
                         <Map className="h-3 w-3" />
@@ -317,7 +311,7 @@ export function DataVisualizationArea() {
                 <TabsTrigger
                   value="spatial"
                   className="flex items-center gap-2"
-                  disabled={selectedFile.type !== "nc"}
+                  disabled={selectedFile.type !== "netcdf"}
                 >
                   <Map className="h-4 w-4" />
                   Spatial Data
@@ -325,7 +319,7 @@ export function DataVisualizationArea() {
                 <TabsTrigger
                   value="analysis"
                   className="flex items-center gap-2"
-                  disabled={selectedFile.type !== "nc"}
+                  disabled={selectedFile.type !== "netcdf"}
                 >
                   <Layers className="h-4 w-4" />
                   Analysis
@@ -341,8 +335,9 @@ export function DataVisualizationArea() {
                   />
                 )}
               </TabsContent>
+
               <TabsContent value="spatial" className="mt-6">
-                {selectedFile.type === "nc" && (
+                {selectedFile.type === "netcdf" && (
                   <div className="space-y-6">
                     <RasterMapViewer
                       filename={selectedFile.name}
@@ -352,7 +347,7 @@ export function DataVisualizationArea() {
                 )}
               </TabsContent>
               <TabsContent value="analysis" className="mt-6">
-                {selectedFile.type === "nc" && (
+                {selectedFile.type === "netcdf" && (
                   <SpatialAnalysisTools
                     data={selectedFile.data}
                     selectedVariable={

@@ -128,7 +128,7 @@ async def get_raster_metadata(
 ) -> Dict[str, Any]:
     """Get raster dataset metadata"""
 
-    file_content = data_repo.get_netcdf_file_content(
+    file_content = await data_repo.get_netcdf_file_content(
         username=current_user.username, filename=filename
     )
     if file_content is None:

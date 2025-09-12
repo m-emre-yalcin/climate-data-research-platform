@@ -68,7 +68,7 @@ export function TimeSeriesChart({
   const [filterOptions, setFilterOptions] = useState({});
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(true);
   const [dataStats, setDataStats] = useState<any>({});
@@ -124,6 +124,8 @@ export function TimeSeriesChart({
     if (type !== "csv" || !filename) return;
 
     const fetchData = async () => {
+      if (loading) return;
+
       setLoading(true);
       const params = new URLSearchParams();
 

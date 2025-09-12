@@ -94,10 +94,10 @@ class TileAPIClient {
     return await response.data;
   }
 
-  async fetchMetadata(): Promise<RasterMetadata> {
+  async fetchMetadata(filename?: string): Promise<RasterMetadata> {
     // Fetch raster metadata - adjust endpoint as needed
     const response = await backend(
-      `/data/visualization/${this.baseUrl}/raster/metadata`
+      `/data/visualization/${this.baseUrl}/raster/metadata/${filename}`
     );
 
     if (!response?.ok) {
@@ -164,14 +164,14 @@ export const RasterMapViewer = ({
     setIsClient(true);
     // Load metadata on mount
     apiClient.current
-      .fetchMetadata()
+      .fetchMetadata(filename)
       .then(setMetadata)
       .catch((error) => {
         console.error("Failed to load metadata:", error);
         // Use fallback metadata
-        apiClient.current.fetchMetadata().then(setMetadata);
+        apiClient.current.fetchMetadata(filename).then(setMetadata);
       });
-  }, []);
+  }, [filename]);
 
   // Tile management system
   const getTileKey = (
@@ -233,6 +233,7 @@ export const RasterMapViewer = ({
 
       // Skip if already loading
       if (loadingTiles.has(tileKey)) {
+        console.log("Loading tiles");
         return null;
       }
 
