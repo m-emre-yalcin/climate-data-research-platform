@@ -77,13 +77,14 @@ class TileAPIClient {
   }
 
   async fetchTile(
+    filename: string,
     variable: string,
     timeIndex: number,
     zoom: number,
     x: number,
     y: number
   ): Promise<TileResponse> {
-    const url = `${this.baseUrl}/raster/tile/${variable}/${timeIndex}/${zoom}/${x}/${y}`;
+    const url = `/data/visualization/${this.baseUrl}/raster/tile/${filename}/${variable}/${timeIndex}/${zoom}/${x}/${y}`;
     const response = await backend(url);
 
     if (!response?.ok) {
@@ -95,7 +96,9 @@ class TileAPIClient {
 
   async fetchMetadata(): Promise<RasterMetadata> {
     // Fetch raster metadata - adjust endpoint as needed
-    const response = await backend(`${this.baseUrl}/raster/metadata`);
+    const response = await backend(
+      `/data/visualization/${this.baseUrl}/raster/metadata`
+    );
 
     if (!response?.ok) {
       // Fallback to mock metadata if endpoint doesn't exist
@@ -121,8 +124,18 @@ class TileAPIClient {
   }
 }
 
+interface RasterMapViewerProps {
+  filename?: string;
+  type?: string;
+  title?: string;
+}
+
 // Tile-based raster viewer
-export const RasterMapViewer = () => {
+export const RasterMapViewer = ({
+  filename,
+  type,
+  title,
+}: RasterMapViewerProps) => {
   const [metadata, setMetadata] = useState<RasterMetadata | null>(null);
   const [selectedVariable, setSelectedVariable] = useState("pr");
   const [currentTimeIndex, setCurrentTimeIndex] = useState(0);
@@ -232,6 +245,7 @@ export const RasterMapViewer = () => {
 
       try {
         const tileResponse = await apiClient.current.fetchTile(
+          filename as string,
           variable,
           timeIndex,
           z,
@@ -270,7 +284,7 @@ export const RasterMapViewer = () => {
         return null;
       }
     },
-    []
+    [filename]
   );
 
   // Render tile to canvas
@@ -573,7 +587,7 @@ export const RasterMapViewer = () => {
           <div>
             <CardTitle className="flex items-center gap-2">
               <LucideMap className="h-5 w-5" />
-              NetCDF Raster Viewer
+              {title || "NetCDF Raster Viewer"}
             </CardTitle>
             <CardDescription>{metadata.attributes.title}</CardDescription>
             <div className="flex items-center gap-2 mt-2">
@@ -755,7 +769,7 @@ export const RasterMapViewer = () => {
           <strong>API Integration:</strong> This viewer fetches tiles from
           FastAPI backend at
           <code className="mx-1 px-1 bg-gray-200 rounded">
-            /raster/tile/&#123;variable&#125;/&#123;time&#125;/&#123;z&#125;/&#123;x&#125;/&#123;y&#125;
+            /data/visualization/raster/tile/&#123;variable&#125;/&#123;time&#125;/&#123;z&#125;/&#123;x&#125;/&#123;y&#125;
           </code>
           Tiles are cached client-side and loaded on-demand as you pan and zoom.
         </div>

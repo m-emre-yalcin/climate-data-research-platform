@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   LineChart,
   Line,
@@ -31,7 +30,6 @@ import {
   TrendingUp,
   Filter,
   Download,
-  Settings,
   Eye,
   RotateCcw,
   Info,
@@ -39,6 +37,7 @@ import {
 import { backend } from "@/lib/fetch";
 
 interface TimeSeriesChartProps {
+  filename?: string;
   title?: string;
   type?: string;
   subtitle?: string;
@@ -49,9 +48,10 @@ interface TimeSeriesChartProps {
 type ChartType = "line" | "area" | "scatter";
 
 export function TimeSeriesChart({
+  filename,
+  type,
   title = "Time Series Analysis",
   subtitle = "Temporal data visualization with advanced filtering",
-  type,
   yAxisLabel = "Value",
   xAxisLabel = "Time",
 }: TimeSeriesChartProps) {
@@ -121,7 +121,7 @@ export function TimeSeriesChart({
 
   // Fetch data
   useEffect(() => {
-    if (type !== "csv") return;
+    if (type !== "csv" || !filename) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -135,7 +135,7 @@ export function TimeSeriesChart({
       }
 
       selectedColumns.forEach((col) => params.append("columns", col));
-      const endpoint = `/data/visualization/timeseries?${params.toString()}`;
+      const endpoint = `/data/visualization/csv/timeseries/${filename}?${params.toString()}`;
       const response = await backend(endpoint);
 
       if (response?.ok) {
@@ -174,7 +174,7 @@ export function TimeSeriesChart({
       setLoading(false);
     };
     fetchData();
-  }, [type, filters, dateColumn]);
+  }, [filename, type, filters, dateColumn]);
 
   // Process data for charting
   const { dateColumns, numericColumns, processedData } = useMemo(() => {

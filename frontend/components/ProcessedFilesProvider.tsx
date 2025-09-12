@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, createContext, useContext } from "react";
+import { ProcessedFile } from "./file-upload-section";
 
 const ProcessedFilesContext = createContext<{
-  processedFiles: string[];
-  setProcessedFiles: React.Dispatch<React.SetStateAction<string[]>>;
+  processedFiles: ProcessedFile[];
+  setProcessedFiles: React.Dispatch<React.SetStateAction<ProcessedFile[]>>;
 }>({
   processedFiles: [],
   setProcessedFiles: () => {},
@@ -15,7 +16,7 @@ export const ProcessedFilesProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [processedFiles, setProcessedFiles] = useState<string[]>([]);
+  const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
 
   // Persist to localStorage whenever the global state changes
   useEffect(() => {
