@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { backend } from "@/lib/fetch";
 
+const TILE_SIZE = 256;
+
 interface RasterMetadata {
   dimensions: { time: number; lat: number; lon: number };
   variables: string[];
@@ -236,7 +238,7 @@ export const RasterMapViewer = ({
       const ctx = canvas.getContext("2d");
       if (!ctx || !metadata) return;
 
-      const imageData = ctx.createImageData(256, 256);
+      const imageData = ctx.createImageData(TILE_SIZE, TILE_SIZE);
       const pixels = imageData.data;
       const stats = metadata.statistics[selectedVariable];
 
@@ -289,8 +291,8 @@ export const RasterMapViewer = ({
       };
 
       let idx = 0;
-      for (let i = 0; i < 256; i++) {
-        for (let j = 0; j < 256; j++) {
+      for (let i = 0; i < TILE_SIZE; i++) {
+        for (let j = 0; j < TILE_SIZE; j++) {
           const value = tileData.tile[i]?.[j] ?? 0;
           const [r, g, b] = getColor(value);
           pixels[idx] = r;
@@ -319,8 +321,8 @@ export const RasterMapViewer = ({
           done: (error: Error | null, tile: HTMLElement) => void
         ) {
           const canvas = document.createElement("canvas");
-          canvas.width = 256;
-          canvas.height = 256;
+          canvas.width = TILE_SIZE;
+          canvas.height = TILE_SIZE;
 
           loadTile(
             coords.x,
@@ -337,7 +339,7 @@ export const RasterMapViewer = ({
                 const ctx = canvas.getContext("2d");
                 if (ctx) {
                   ctx.fillStyle = "rgba(200, 200, 200, 0.3)";
-                  ctx.fillRect(0, 0, 256, 256);
+                  ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
                   ctx.fillStyle = "rgba(100, 100, 100, 0.8)";
                   ctx.font = "12px Arial";
                   ctx.textAlign = "center";
@@ -352,7 +354,7 @@ export const RasterMapViewer = ({
               const ctx = canvas.getContext("2d");
               if (ctx) {
                 ctx.fillStyle = "rgba(255, 100, 100, 0.3)";
-                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
                 ctx.fillStyle = "rgba(150, 50, 50, 0.8)";
                 ctx.font = "12px Arial";
                 ctx.textAlign = "center";
@@ -367,7 +369,7 @@ export const RasterMapViewer = ({
 
       resolve(
         new RasterLayer({
-          tileSize: 256,
+          tileSize: TILE_SIZE,
           opacity: opacity[0] / 100,
           zIndex: 10,
         })
@@ -518,7 +520,7 @@ export const RasterMapViewer = ({
     x: number,
     y: number
   ): Promise<TileResponse> => {
-    const url = `/data/visualization/raster/tile/${filename}/${variable}/${timeIndex}/${zoom}/${x}/${y}`;
+    const url = `/data/visualization/raster/tile/${filename}/${variable}/${timeIndex}/${zoom}/${x}/${y}?tile_size=${TILE_SIZE}`;
     const response = await backend(url);
 
     if (!response?.ok) {
@@ -656,7 +658,11 @@ export const RasterMapViewer = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentTimeIndex(0)}
+              onClick={() =>
+                setCurrentTimeIndex(
+                  currentTimeIndex > 1 ? currentTimeIndex - 1 : 0
+                )
+              }
             >
               <SkipBack className="h-4 w-4" />
             </Button>
@@ -674,7 +680,13 @@ export const RasterMapViewer = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentTimeIndex(metadata.dimensions.time - 1)}
+              onClick={() =>
+                setCurrentTimeIndex(
+                  currentTimeIndex + 1 >= metadata.dimensions.time
+                    ? metadata.dimensions.time - 1
+                    : currentTimeIndex + 1
+                )
+              }
             >
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -744,7 +756,9 @@ export const RasterMapViewer = ({
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold">
-              {Math.round((tileCache.current.size * 256 * 256 * 4) / 1024)}
+              {Math.round(
+                (tileCache.current.size * TILE_SIZE * TILE_SIZE * 4) / 1024
+              )}
             </p>
             <p className="text-sm text-muted-foreground">Cache (KB)</p>
           </div>

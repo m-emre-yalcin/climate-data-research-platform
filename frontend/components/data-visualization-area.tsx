@@ -348,10 +348,11 @@ export function DataVisualizationArea() {
                   </div>
                 )}
               </TabsContent>
+
               <TabsContent value="analysis" className="mt-6">
                 {selectedFile.type === "netcdf" && (
                   <SpatialAnalysisTools
-                    data={selectedFile.data}
+                    data={selectedFile}
                     selectedVariable={
                       selectedFile.metadata.variables?.[0] || "temperature"
                     }
