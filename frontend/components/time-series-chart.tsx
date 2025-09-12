@@ -228,15 +228,47 @@ export function TimeSeriesChart({
     col.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Enhanced formatters for better value display
+  const formatValue = (value: number) => {
+    if (value === 0) return "0";
+
+    const absValue = Math.abs(value);
+
+    // Very large numbers - use scientific notation
+    if (absValue >= 1e6) {
+      return value.toExponential(2);
+    }
+
+    // Large numbers - use K, M notation
+    if (absValue >= 1000) {
+      if (absValue >= 1000000) {
+        return (value / 1000000).toFixed(1) + "M";
+      }
+      return (value / 1000).toFixed(1) + "K";
+    }
+
+    // Small numbers - show appropriate decimal places
+    if (absValue < 1) {
+      if (absValue < 0.001) {
+        return value.toExponential(2);
+      }
+      return value.toFixed(3);
+    }
+
+    // Regular numbers
+    return value.toFixed(2);
+  };
+
   const formatXAxisTick = (tickItem: any) => {
     if (dateColumn && tickItem) {
       const date = new Date(tickItem);
-      return date.toLocaleDateString(undefined, {
-        month: "short",
-        year: "2-digit",
-      });
+      return date.getFullYear().toString();
     }
     return tickItem;
+  };
+
+  const formatYAxisTick = (value: number) => {
+    return formatValue(value);
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -270,7 +302,7 @@ export function TimeSeriesChart({
                 </div>
                 <span className="font-semibold text-gray-900">
                   {typeof entry.value === "number"
-                    ? entry.value.toFixed(3)
+                    ? formatValue(entry.value)
                     : entry.value}
                 </span>
               </div>
@@ -287,7 +319,6 @@ export function TimeSeriesChart({
       data: processedData,
       margin: { top: 20, right: 30, left: 20, bottom: 20 },
     };
-
     const xAxisProps = {
       dataKey: dateColumn || "index",
       tickFormatter: formatXAxisTick,
@@ -296,6 +327,7 @@ export function TimeSeriesChart({
       domain: dateColumn ? ["dataMin", "dataMax"] : undefined,
       fontSize: 12,
       tick: { fill: "#6b7280" },
+      tickCount: 6, // Limit number of ticks for cleaner display
       label: {
         value: xAxisLabel,
         position: "insideBottom",
@@ -303,10 +335,11 @@ export function TimeSeriesChart({
         style: { textAnchor: "middle" },
       },
     };
-
     const yAxisProps = {
       fontSize: 12,
       tick: { fill: "#6b7280" },
+      tickFormatter: formatYAxisTick,
+      width: 80, // Give more space for formatted values
       label: {
         value: yAxisLabel,
         angle: -90,
@@ -314,7 +347,6 @@ export function TimeSeriesChart({
         style: { textAnchor: "middle" },
       },
     };
-
     if (loading)
       return (
         <Card className="border-2">
