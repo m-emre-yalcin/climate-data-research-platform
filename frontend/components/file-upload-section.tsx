@@ -127,10 +127,8 @@ export function FileUploadSection() {
           )
         );
 
-        // Upload to appropriate endpoint
-        const endpoint = fileType === "csv" ? "/upload/csv" : "/upload/raster";
-
-        const uploadResponse = await backend(endpoint, {
+        // Server handles data processing based on file type
+        const uploadResponse = await backend("/upload/data", {
           method: "POST",
           body: formData,
           requireAuth: true,
