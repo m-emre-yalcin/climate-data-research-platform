@@ -101,9 +101,11 @@ export function DataVisualizationArea() {
     console.log("Analysis complete:", results);
   };
 
-  const csvFiles = processedFiles.filter((file: any) => file.type === "csv");
+  const csvFiles = processedFiles.filter(
+    (file: any) => file.type === "csv" || file.name.endsWith(".csv")
+  );
   const netcdfFiles = processedFiles.filter(
-    (file: any) => file.type === "netcdf"
+    (file: any) => file.type === "netcdf" || file.name.endsWith(".nc")
   );
 
   if (loading) {
