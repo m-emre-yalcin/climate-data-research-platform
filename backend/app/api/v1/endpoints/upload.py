@@ -22,7 +22,7 @@ def get_file_path(username: str, filename: str) -> Path:
     return UPLOADS_DIR / f"{username}_{filename}"
 
 
-@router.post("/data", response_model=CSVUploadResponse)
+@router.post("/data")
 async def upload_csv(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
