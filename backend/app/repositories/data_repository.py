@@ -8,7 +8,7 @@ class DataRepository:
     UPLOADS_DIR = Path.cwd() / "app/uploads"
 
     @classmethod
-    def _get_file_path(cls, username: Optional[str], filename: str) -> Path:
+    def _get_file_path(cls, username: str = "", filename: str = "") -> Path:
         """Generate file path with username_filename convention"""
         return (
             cls.UPLOADS_DIR / f"{username}_{filename}"
@@ -17,10 +17,13 @@ class DataRepository:
         )
 
     @classmethod
-    def _get_metadata_path(cls, username: str, filename: str) -> Path:
+    def _get_metadata_path(cls, username: str = "", filename: str = "") -> Path:
         """Generate metadata file path"""
-        base_name = f"{username}_{filename}"
-        return cls.UPLOADS_DIR / f"{base_name}.metadata.json"
+        return (
+            cls.UPLOADS_DIR / f"{username}_{filename}.metadata.json"
+            if username and filename
+            else cls.UPLOADS_DIR / f"{filename}.metadata.json"
+        )
 
     @classmethod
     def store_csv_data(
@@ -31,7 +34,7 @@ class DataRepository:
     ) -> None:
         """Store cleaning report and metadata (CSV file already saved)"""
         metadata_path = cls._get_metadata_path(
-            file_metadata["username"], file_metadata["filename"]
+            username=file_metadata["username"], filename=file_metadata["filename"]
         )
 
         metadata_content = {
@@ -44,20 +47,20 @@ class DataRepository:
 
     @classmethod
     def get_csv_data(
-        cls, username: Optional[str], filename: str
+        cls, username: str = "", filename: str = ""
     ) -> Optional[pd.DataFrame]:
         """Read CSV data from filesystem"""
-        file_path = cls._get_file_path(username, filename)
+        file_path = cls._get_file_path(username=username, filename=filename)
         if file_path.exists():
             return pd.read_csv(file_path)
         return None
 
     @classmethod
     def get_cleaning_report(
-        cls, username: Optional[str], filename: str
+        cls, username: str = "", filename: str = ""
     ) -> Optional[Dict[str, Any]]:
         """Get cleaning report from metadata file"""
-        metadata_path = cls._get_metadata_path(username, filename)
+        metadata_path = cls._get_metadata_path(username=username, filename=filename)
         if metadata_path.exists():
             with open(metadata_path, "r") as f:
                 metadata = json.load(f)
@@ -69,7 +72,7 @@ class DataRepository:
         """Store raster metadata (raster file already saved)"""
         metadata = raster_info.get("metadata", {})
         metadata_path = cls._get_metadata_path(
-            metadata["username"], metadata["filename"]
+            username=metadata["username"], filename=metadata["filename"]
         )
 
         with open(metadata_path, "w") as f:
@@ -77,19 +80,21 @@ class DataRepository:
 
     @classmethod
     def get_raster_data(
-        cls, username: Optional[str], filename: str
+        cls, username: str = "", filename: str = ""
     ) -> Optional[Dict[str, Any]]:
         """Get raster metadata from file"""
-        metadata_path = cls._get_metadata_path(username, filename)
+        metadata_path = cls._get_metadata_path(username=username, filename=filename)
         if metadata_path.exists():
             with open(metadata_path, "r") as f:
                 return json.load(f)
         return None
 
     @classmethod
-    def get_netcdf_file_content(cls, username: str, filename: str) -> Optional[bytes]:
+    def get_netcdf_file_content(
+        cls, username: str = "", filename: str = ""
+    ) -> Optional[bytes]:
         """Get NetCDF file content as bytes"""
-        file_path = cls._get_file_path(username, filename)
+        file_path = cls._get_file_path(username=username, filename=filename)
         if file_path.exists() and file_path.suffix == ".nc":
             try:
                 with open(file_path, "rb") as f:
@@ -109,10 +114,10 @@ class DataRepository:
         return filenames
 
     @classmethod
-    def clear_data_by_filename(cls, username: str, filename: str):
+    def clear_data_by_filename(cls, filename: str):
         """Delete file and metadata for specific user's filename"""
-        file_path = cls._get_file_path(username, filename)
-        metadata_path = cls._get_metadata_path(username, filename)
+        file_path = cls._get_file_path(filename=filename)
+        metadata_path = cls._get_metadata_path(filename=filename)
 
         for path in [file_path, metadata_path]:
             if path.exists():

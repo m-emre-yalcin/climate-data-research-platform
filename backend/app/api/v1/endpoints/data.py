@@ -36,7 +36,7 @@ async def clear_all_data(
     data_repo: DataRepository = Depends(get_data_repository),
 ) -> Dict[str, str]:
     """Clear all stored data"""
-    data_repo.clear_data_by_filename(filename=filename, username=current_user.username)
+    data_repo.clear_data_by_filename(filename=filename)
     return {"message": f"Data {filename} cleared successfully"}
 
 

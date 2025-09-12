@@ -29,7 +29,7 @@ async def upload_csv(
     data_repo: DataRepository = Depends(get_data_repository),
 ):
     """Upload and process CSV file"""
-    if not file.filename.endswith(".csv") or file.filename.endswith(".nc"):
+    if not file.filename.endswith(".csv") or not file.filename.endswith(".nc"):
         raise HTTPException(status_code=400, detail="File must be a CSV or NetCDF")
 
     # Check if file already exists
