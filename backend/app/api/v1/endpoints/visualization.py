@@ -75,6 +75,7 @@ async def get_raster_tile(
     current_user: User = Depends(get_current_user),
     data_repo: DataRepository = Depends(get_data_repository),
     filename: str = "",
+    tile_size: Optional[int] = Query(256, description="Tile size"),
 ) -> Dict[str, Any]:
     """Get a specific tile of raster data for efficient visualization"""
 
@@ -83,7 +84,7 @@ async def get_raster_tile(
             username=current_user.username, filename=filename
         )
         tile_data = RasterService.extract_tile_from_netcdf(
-            file_path, variable, time_index, zoom, x, y
+            file_path, variable, time_index, zoom, x, y, tile_size=tile_size
         )
 
         return {
@@ -94,7 +95,7 @@ async def get_raster_tile(
                 "zoom": zoom,
                 "x": x,
                 "y": y,
-                "tile_size": 256,
+                "tile_size": tile_size,
                 "stats": tile_data["stats"],
             },
         }
@@ -109,7 +110,7 @@ async def get_raster_tile(
                 "zoom": zoom,
                 "x": x,
                 "y": y,
-                "tile_size": 256,
+                "tile_size": tile_size,
                 "fallback": True,
             },
         }
