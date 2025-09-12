@@ -85,11 +85,16 @@ async def upload_csv(
         try:
             # Read the nc file
             content = await file.read()
-            raster_info = RasterService.process_raster_data(content)
 
             # Save file to uploads directory
+            file_path = data_repo._get_file_path(
+                username=current_user.username, filename=file.filename
+            )
             with open(file_path, "wb") as f:
                 f.write(content)
+
+            # Process Raster data
+            raster_info = RasterService.process_raster_data(file_path)
 
             # Store processed info with metadata
             metadata = {

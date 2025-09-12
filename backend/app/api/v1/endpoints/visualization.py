@@ -78,17 +78,12 @@ async def get_raster_tile(
 ) -> Dict[str, Any]:
     """Get a specific tile of raster data for efficient visualization"""
 
-    # Get the stored file content from your repository
-    file_content = data_repo.get_netcdf_file_content(
-        username=current_user.username, filename=filename
-    )
-    if file_content is None:
-        raise DataNotFoundError("No NetCDF file available")
-
     try:
-        # Use your existing RasterService but modify for tile extraction
+        file_path = data_repo._get_file_path(
+            username=current_user.username, filename=filename
+        )
         tile_data = RasterService.extract_tile_from_netcdf(
-            file_content, variable, time_index, zoom, x, y
+            file_path, variable, time_index, zoom, x, y
         )
 
         return {
@@ -127,15 +122,13 @@ async def get_raster_metadata(
     filename: str = "",
 ) -> Dict[str, Any]:
     """Get raster dataset metadata"""
-
-    file_content = await data_repo.get_netcdf_file_content(
-        username=current_user.username, filename=filename
-    )
-    if file_content is None:
-        raise DataNotFoundError("No NetCDF file available")
-
     try:
-        return RasterService.get_raster_metadata(file_content)
+        file_path = data_repo._get_file_path(
+            filename=filename, username=current_user.username
+        )
+        print({"file_path": file_path})
+
+        return RasterService.get_raster_metadata(file_path)
     except Exception as e:
         logger.error(f"Error getting raster metadata: {e}")
         raise DataProcessingError(f"Error processing raster metadata: {str(e)}")

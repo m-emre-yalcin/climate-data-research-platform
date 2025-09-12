@@ -3,7 +3,6 @@ import numpy as np
 import xarray as xr
 from typing import Tuple, Dict, Any
 import logging
-import tempfile
 import os
 from app.core.exceptions import DataProcessingError
 
@@ -12,19 +11,13 @@ logger = logging.getLogger(__name__)
 
 class RasterService:
     @staticmethod
-    def process_raster_data(file_content: bytes) -> dict:
+    def process_raster_data(file_path: str) -> dict:
         """
         Clean and standardize the NetCDF raster data
         """
-        temp_file = None
         try:
-            # Write to a temporary file
-            with tempfile.NamedTemporaryFile(suffix=".nc", delete=False) as temp_file:
-                temp_file.write(file_content)
-                temp_file_path = temp_file.name
-
-            # Read NetCDF data from the temporary file
-            ds = xr.open_dataset(temp_file_path, engine="h5netcdf")
+            # Read NetCDF data from uploaded file
+            ds = xr.open_dataset(file_path, engine="h5netcdf")
 
             # Load the data into memory
             ds = ds.load()
@@ -81,14 +74,10 @@ class RasterService:
         except Exception as e:
             logger.error(f"Error processing raster data: {e}")
             raise DataProcessingError(f"Error cleaning CSV data: {str(e)}")
-        finally:
-            # Clean up temporary file
-            if temp_file and os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
 
     @staticmethod
     def extract_tile_from_netcdf(
-        file_content: bytes,
+        file_path: str,
         variable: str,
         time_index: int,
         zoom: int,
@@ -97,15 +86,9 @@ class RasterService:
         tile_size: int = 256,
     ) -> dict:
         """Extract a specific tile from NetCDF data"""
-        temp_file = None
         try:
-            # Write to temporary file (same as your existing method)
-            with tempfile.NamedTemporaryFile(suffix=".nc", delete=False) as temp_file:
-                temp_file.write(file_content)
-                temp_file_path = temp_file.name
-
             # Open dataset
-            ds = xr.open_dataset(temp_file_path, engine="h5netcdf")
+            ds = xr.open_dataset(file_path, engine="h5netcdf")
 
             if variable not in ds.data_vars:
                 raise ValueError(f"Variable {variable} not found")
@@ -168,20 +151,13 @@ class RasterService:
         except Exception as e:
             logger.error(f"Error extracting tile: {e}")
             raise
-        finally:
-            if temp_file and os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
 
     @staticmethod
-    def get_raster_metadata(file_content: bytes) -> dict:
+    def get_raster_metadata(file_path: str) -> dict:
         """Get metadata for the tile viewer (enhanced version of process_raster_data)"""
-        temp_file = None
         try:
-            with tempfile.NamedTemporaryFile(suffix=".nc", delete=False) as temp_file:
-                temp_file.write(file_content)
-                temp_file_path = temp_file.name
 
-            ds = xr.open_dataset(temp_file_path, engine="h5netcdf")
+            ds = xr.open_dataset(file_path, engine="h5netcdf")
             ds = ds.load()
 
             # Get coordinate info
@@ -236,6 +212,3 @@ class RasterService:
         except Exception as e:
             logger.error(f"Error getting metadata: {e}")
             raise
-        finally:
-            if temp_file and os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
