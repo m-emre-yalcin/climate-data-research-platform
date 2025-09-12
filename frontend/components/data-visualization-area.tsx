@@ -44,13 +44,17 @@ interface ProcessedFile {
 
 export function DataVisualizationArea() {
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>(
-    JSON.parse((localStorage.getItem("processedFiles") as any) || "{}")
+    [] as any
   );
   const [selectedFile, setSelectedFile] = useState<ProcessedFile | null>(null);
   const [activeTab, setActiveTab] = useState("timeseries");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setProcessedFiles(
+      JSON.parse(localStorage?.getItem("processedFiles") || "[]")
+    );
+
     const listener = (event: StorageEvent) => {
       console.log("Storage changed", event);
 
@@ -89,6 +93,7 @@ export function DataVisualizationArea() {
       );
 
       setProcessedFiles(updatedFiles);
+      localStorage.setItem("processedFiles", JSON.stringify(updatedFiles));
       if (selectedFile?.name === fileName) {
         setSelectedFile(updatedFiles.length > 0 ? updatedFiles[0] : null);
       }
@@ -341,6 +346,7 @@ export function DataVisualizationArea() {
               <TabsContent value="timeseries" className="mt-6">
                 {selectedFile.type === "csv" && (
                   <TimeSeriesChart
+                    type={selectedFile.type}
                     data={selectedFile.data}
                     title={`Time Series Analysis - ${selectedFile.name}`}
                     description={`${selectedFile.metadata.rows} data points across ${selectedFile.metadata.columns} variables`}

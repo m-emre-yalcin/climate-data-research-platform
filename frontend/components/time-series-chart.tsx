@@ -31,12 +31,14 @@ import { backend } from "@/lib/fetch";
 
 interface TimeSeriesChartProps {
   title?: string;
+  type?: string;
 }
 
 type ChartType = "line" | "area" | "scatter";
 
 export function TimeSeriesChart({
   title = "Time Series Analysis",
+  type,
 }: TimeSeriesChartProps) {
   const [chartType, setChartType] = useState<ChartType>("line");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
@@ -74,6 +76,8 @@ export function TimeSeriesChart({
 
   // Fetch data based on applied filters and selected columns
   useEffect(() => {
+    if (type !== "csv") return;
+
     const fetchData = async () => {
       setLoading(true);
       const params = new URLSearchParams();
@@ -90,7 +94,7 @@ export function TimeSeriesChart({
       const endpoint = `/data/visualization/timeseries?${params.toString()}`;
       const response = await backend(endpoint);
 
-      if (response.ok) {
+      if (response?.ok) {
         const resData = response.data;
         const reconstructedData = resData.x_axis.map((x: string, i: number) => {
           const row: any = { [resData.x_label]: x };
@@ -111,7 +115,7 @@ export function TimeSeriesChart({
       setLoading(false);
     };
     fetchData();
-  }, [filters, selectedColumns, dateColumn]);
+  }, [type, filters, selectedColumns, dateColumn]);
 
   // Process data for charting
   const { dateColumns, numericColumns, processedData } = useMemo(() => {

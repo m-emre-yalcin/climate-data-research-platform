@@ -1,11 +1,23 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart,
   Bar,
@@ -17,45 +29,62 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-} from "recharts"
-import { MapPin, BarChart3, TrendingUp, Layers, Calculator } from "lucide-react"
+} from "recharts";
+import { MapPin, BarChart3, TrendingUp, Calculator } from "lucide-react";
 
 interface SpatialAnalysisToolsProps {
-  data: any
-  selectedVariable: string
-  onAnalysisComplete: (results: any) => void
+  data: any;
+  selectedVariable: string;
+  onAnalysisComplete: (results: any) => void;
 }
 
-export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplete }: SpatialAnalysisToolsProps) {
-  const [analysisType, setAnalysisType] = useState<string>("profile")
-  const [selectedRegion, setSelectedRegion] = useState<string>("global")
+export function SpatialAnalysisTools({
+  data,
+  selectedVariable,
+  onAnalysisComplete,
+}: SpatialAnalysisToolsProps) {
+  const [analysisType, setAnalysisType] = useState<string>("profile");
+  const [selectedRegion, setSelectedRegion] = useState<string>("global");
 
   // Generate mock analysis data
   const generateProfileData = () => {
-    const profileData = []
+    const profileData = [];
     for (let i = 0; i < 20; i++) {
       profileData.push({
         distance: i * 5,
         value: Math.sin(i * 0.3) * 20 + 25 + Math.random() * 5,
         latitude: 45 - i * 2,
-      })
+      });
     }
-    return profileData
-  }
+    return profileData;
+  };
 
   const generateTimeSeriesData = () => {
-    const timeSeriesData = []
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const timeSeriesData = [];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
 
     months.forEach((month, index) => {
       timeSeriesData.push({
         month,
         value: 20 + Math.sin(index * 0.5) * 15 + Math.random() * 5,
         anomaly: (Math.random() - 0.5) * 10,
-      })
-    })
-    return timeSeriesData
-  }
+      });
+    });
+    return timeSeriesData;
+  };
 
   const generateStatistics = () => ({
     mean: 24.5,
@@ -64,11 +93,11 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
     min: 8.1,
     max: 42.3,
     range: 34.2,
-  })
+  });
 
-  const profileData = generateProfileData()
-  const timeSeriesData = generateTimeSeriesData()
-  const statistics = generateStatistics()
+  const profileData = generateProfileData();
+  const timeSeriesData = generateTimeSeriesData();
+  const statistics = generateStatistics();
 
   const regions = [
     { value: "global", label: "Global" },
@@ -76,14 +105,13 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
     { value: "temperate", label: "Temperate (23-66°)" },
     { value: "tropical", label: "Tropical (±23°)" },
     { value: "custom", label: "Custom Region" },
-  ]
+  ];
 
   const analysisTypes = [
     { value: "profile", label: "Spatial Profile", icon: MapPin },
     { value: "timeseries", label: "Time Series", icon: TrendingUp },
     { value: "statistics", label: "Statistics", icon: Calculator },
-    { value: "comparison", label: "Layer Comparison", icon: Layers },
-  ]
+  ];
 
   return (
     <Card>
@@ -92,7 +120,9 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
           <BarChart3 className="h-5 w-5" />
           Spatial Analysis Tools
         </CardTitle>
-        <CardDescription>Analyze patterns and trends in your raster data</CardDescription>
+        <CardDescription>
+          Analyze patterns and trends in your raster data
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Analysis Controls */}
@@ -138,10 +168,18 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
         </div>
 
         {/* Analysis Results */}
-        <Tabs value={analysisType} onValueChange={setAnalysisType} className="w-full">
+        <Tabs
+          value={analysisType}
+          onValueChange={setAnalysisType}
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-4">
             {analysisTypes.map((type) => (
-              <TabsTrigger key={type.value} value={type.value} className="flex items-center gap-1">
+              <TabsTrigger
+                key={type.value}
+                value={type.value}
+                className="flex items-center gap-1"
+              >
                 <type.icon className="h-3 w-3" />
                 <span className="hidden sm:inline">{type.label}</span>
               </TabsTrigger>
@@ -159,14 +197,30 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={profileData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="opacity-30"
+                    />
                     <XAxis
                       dataKey="latitude"
-                      label={{ value: "Latitude (°N)", position: "insideBottom", offset: -5 }}
+                      label={{
+                        value: "Latitude (°N)",
+                        position: "insideBottom",
+                        offset: -5,
+                      }}
                     />
-                    <YAxis label={{ value: selectedVariable, angle: -90, position: "insideLeft" }} />
+                    <YAxis
+                      label={{
+                        value: selectedVariable,
+                        angle: -90,
+                        position: "insideLeft",
+                      }}
+                    />
                     <Tooltip
-                      formatter={(value: any) => [`${value.toFixed(1)}`, selectedVariable]}
+                      formatter={(value: any) => [
+                        `${value.toFixed(1)}`,
+                        selectedVariable,
+                      ]}
                       labelFormatter={(label) => `Latitude: ${label}°N`}
                     />
                     <Line
@@ -174,7 +228,11 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
                       dataKey="value"
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
-                      dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 3 }}
+                      dot={{
+                        fill: "hsl(var(--primary))",
+                        strokeWidth: 2,
+                        r: 3,
+                      }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -193,12 +251,23 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="opacity-30"
+                    />
                     <XAxis dataKey="month" />
-                    <YAxis label={{ value: selectedVariable, angle: -90, position: "insideLeft" }} />
+                    <YAxis
+                      label={{
+                        value: selectedVariable,
+                        angle: -90,
+                        position: "insideLeft",
+                      }}
+                    />
                     <Tooltip
                       formatter={(value: any, name: string) => [
-                        `${value.toFixed(1)}${name === "anomaly" ? " (anomaly)" : ""}`,
+                        `${value.toFixed(1)}${
+                          name === "anomaly" ? " (anomaly)" : ""
+                        }`,
                         name === "value" ? selectedVariable : "Anomaly",
                       ]}
                     />
@@ -237,7 +306,9 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
                   <Card key={key}>
                     <CardContent className="p-4 text-center">
                       <p className="text-2xl font-bold">{value.toFixed(1)}</p>
-                      <p className="text-sm text-muted-foreground capitalize">{key}</p>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {key}
+                      </p>
                     </CardContent>
                   </Card>
                 ))}
@@ -253,7 +324,10 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
                       { range: "40+", count: 5 },
                     ]}
                   >
-                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      className="opacity-30"
+                    />
                     <XAxis dataKey="range" />
                     <YAxis />
                     <Tooltip />
@@ -263,25 +337,8 @@ export function SpatialAnalysisTools({ data, selectedVariable, onAnalysisComplet
               </div>
             </div>
           </TabsContent>
-
-          <TabsContent value="comparison" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Layer Comparison</h4>
-                <Button variant="outline" size="sm">
-                  Configure Layers
-                </Button>
-              </div>
-              <div className="text-center py-12 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-                <Layers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Multi-Layer Analysis</h3>
-                <p className="text-muted-foreground mb-4">Compare multiple variables or time periods</p>
-                <Button>Select Layers to Compare</Button>
-              </div>
-            </div>
-          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }
