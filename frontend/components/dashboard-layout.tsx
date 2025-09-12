@@ -34,12 +34,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 Dashboard
               </a>
               <a
-                href="#"
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
-                Documentation
-              </a>
-              <a
                 href="/login"
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
