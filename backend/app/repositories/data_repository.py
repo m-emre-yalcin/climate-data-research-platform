@@ -125,10 +125,10 @@ class DataRepository:
         return metadata_list
 
     @classmethod
-    def clear_data_by_filename(cls, filename: str):
+    def clear_data_by_filename(cls, filename: str, username: str):
         """Delete file and metadata for specific user's filename"""
-        file_path = cls._get_file_path(filename=filename)
-        metadata_path = cls._get_metadata_path(filename=filename)
+        file_path = cls._get_file_path(filename=filename, username=username)
+        metadata_path = cls._get_metadata_path(filename=filename, username=username)
 
         for path in [file_path, metadata_path]:
             if path.exists():
