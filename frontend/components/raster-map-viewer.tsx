@@ -68,62 +68,6 @@ interface TileData extends TileResponse {
   timestamp: number;
 }
 
-// API client for tile requests
-class TileAPIClient {
-  private baseUrl: string;
-
-  constructor(baseUrl: string = "/api/data") {
-    this.baseUrl = baseUrl;
-  }
-
-  async fetchTile(
-    filename: string,
-    variable: string,
-    timeIndex: number,
-    zoom: number,
-    x: number,
-    y: number
-  ): Promise<TileResponse> {
-    const url = `/data/visualization/${this.baseUrl}/raster/tile/${filename}/${variable}/${timeIndex}/${zoom}/${x}/${y}`;
-    const response = await backend(url);
-
-    if (!response?.ok) {
-      throw new Error(`Failed to fetch tile: ${response?.status}`);
-    }
-
-    return await response.data;
-  }
-
-  async fetchMetadata(filename?: string): Promise<RasterMetadata> {
-    // Fetch raster metadata - adjust endpoint as needed
-    const response = await backend(
-      `/data/visualization/${this.baseUrl}/raster/metadata/${filename}`
-    );
-
-    if (!response?.ok) {
-      // Fallback to mock metadata if endpoint doesn't exist
-      return {
-        dimensions: { time: 24, lat: 2088, lon: 4320 },
-        variables: ["pr", "temperature", "humidity"],
-        bounds: { north: 90, south: -90, east: 180, west: -180 },
-        resolution: { lat: 0.0861, lon: 0.0833 },
-        attributes: {
-          title: "High-Resolution Climate Data (2088×4320)",
-          institution: "Climate Research Institute",
-          comment: "Real NetCDF data via tile API",
-        },
-        statistics: {
-          pr: { min: 0, max: 0.05, mean: 0.0025, units: "kg m⁻² s⁻¹" },
-          temperature: { min: -40, max: 45, mean: 15, units: "°C" },
-          humidity: { min: 0, max: 100, mean: 65, units: "%" },
-        },
-      };
-    }
-
-    return await response.data;
-  }
-}
-
 interface RasterMapViewerProps {
   filename?: string;
   type?: string;
@@ -158,18 +102,16 @@ export const RasterMapViewer = ({
   const mapInstanceRef = useRef<any>(null);
   const tileLayerRef = useRef<any>(null);
   const tileCache = useRef(new Map<string, TileData>());
-  const apiClient = useRef(new TileAPIClient());
 
   useEffect(() => {
     setIsClient(true);
     // Load metadata on mount
-    apiClient.current
-      .fetchMetadata(filename)
+    fetchMetadata(filename)
       .then(setMetadata)
       .catch((error) => {
         console.error("Failed to load metadata:", error);
         // Use fallback metadata
-        apiClient.current.fetchMetadata(filename).then(setMetadata);
+        fetchMetadata(filename).then(setMetadata);
       });
   }, [filename]);
 
@@ -245,7 +187,7 @@ export const RasterMapViewer = ({
       });
 
       try {
-        const tileResponse = await apiClient.current.fetchTile(
+        const tileResponse = await fetchTile(
           filename as string,
           variable,
           timeIndex,
@@ -566,6 +508,53 @@ export const RasterMapViewer = ({
     return sizeMB > 1000
       ? `${(sizeMB / 1024).toFixed(1)} GB`
       : `${sizeMB.toFixed(0)} MB`;
+  };
+
+  const fetchTile = async (
+    filename: string,
+    variable: string,
+    timeIndex: number,
+    zoom: number,
+    x: number,
+    y: number
+  ): Promise<TileResponse> => {
+    const url = `/data/visualization/raster/tile/${filename}/${variable}/${timeIndex}/${zoom}/${x}/${y}`;
+    const response = await backend(url);
+
+    if (!response?.ok) {
+      throw new Error(`Failed to fetch tile: ${response?.status}`);
+    }
+
+    return await response.data;
+  };
+
+  const fetchMetadata = async (filename?: string): Promise<RasterMetadata> => {
+    // Fetch raster metadata - adjust endpoint as needed
+    const response = await backend(
+      `/data/visualization/raster/metadata/${filename}`
+    );
+
+    if (!response?.ok) {
+      // Fallback to mock metadata if endpoint doesn't exist
+      return {
+        dimensions: { time: 24, lat: 2088, lon: 4320 },
+        variables: ["pr", "temperature", "humidity"],
+        bounds: { north: 90, south: -90, east: 180, west: -180 },
+        resolution: { lat: 0.0861, lon: 0.0833 },
+        attributes: {
+          title: "High-Resolution Climate Data (2088×4320)",
+          institution: "Climate Research Institute",
+          comment: "Real NetCDF data via tile API",
+        },
+        statistics: {
+          pr: { min: 0, max: 0.05, mean: 0.0025, units: "kg m⁻² s⁻¹" },
+          temperature: { min: -40, max: 45, mean: 15, units: "°C" },
+          humidity: { min: 0, max: 100, mean: 65, units: "%" },
+        },
+      };
+    }
+
+    return await response.data;
   };
 
   if (!metadata) {
