@@ -24,13 +24,6 @@ class DataSummary(BaseModel):
     cleaning_report: Optional[Dict[str, Any]] = None
 
 
-class TimeseriesRequest(BaseModel):
-    columns: Optional[List[str]] = None
-    model: Optional[str] = None
-    scenario: Optional[str] = None
-    region: Optional[str] = None
-
-
 class TimeseriesResponse(BaseModel):
     x_axis: List[str]
     y_axes: Dict[str, List[float]]

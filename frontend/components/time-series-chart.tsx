@@ -26,7 +26,6 @@ import {
   Legend,
   ResponsiveContainer,
   Brush,
-  ReferenceLine,
 } from "recharts";
 import {
   TrendingUp,
@@ -34,11 +33,8 @@ import {
   Download,
   Settings,
   Eye,
-  EyeOff,
   RotateCcw,
   Info,
-  Search,
-  X,
 } from "lucide-react";
 import { backend } from "@/lib/fetch";
 
@@ -67,17 +63,9 @@ export function TimeSeriesChart({
   const [showLegend, setShowLegend] = useState(true);
   const [lineWidth, setLineWidth] = useState(2);
   const [showDataPoints, setShowDataPoints] = useState(false);
-  const [filters, setFilters] = useState({
-    model: "",
-    scenario: "",
-    region: "",
-  });
+  const [filters, setFilters] = useState({});
   const [pendingFilters, setPendingFilters] = useState(filters);
-  const [filterOptions, setFilterOptions] = useState({
-    models: [],
-    scenarios: [],
-    regions: [],
-  });
+  const [filterOptions, setFilterOptions] = useState({});
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -377,7 +365,7 @@ export function TimeSeriesChart({
               <Brush
                 dataKey={dateColumn || "index"}
                 height={40}
-                stroke="#4f46e5"
+                stroke="#1B62B7"
                 tickFormatter={formatXAxisTick}
               />
             )}
@@ -442,7 +430,7 @@ export function TimeSeriesChart({
               <Brush
                 dataKey={dateColumn || "index"}
                 height={40}
-                stroke="#4f46e5"
+                stroke="#1B62B7"
                 tickFormatter={formatXAxisTick}
               />
             )}
@@ -456,7 +444,7 @@ export function TimeSeriesChart({
   };
 
   const handleResetFilters = () => {
-    const resetFilters = { model: "", scenario: "", region: "" };
+    const resetFilters = {};
     setPendingFilters(resetFilters);
     setFilters(resetFilters);
   };

@@ -56,8 +56,6 @@ export function DataVisualizationArea() {
     );
 
     const listener = (event: StorageEvent) => {
-      console.log("Storage changed", event);
-
       const processedFiles = JSON.parse(
         localStorage.getItem("processedFiles") || "[]"
       );
