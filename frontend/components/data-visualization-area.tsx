@@ -199,7 +199,7 @@ export function DataVisualizationArea() {
                             : "outline"
                         }
                         size="sm"
-                        onClick={handleSelectFile}
+                        onClick={() => handleSelectFile(file as any)}
                         className="flex items-center gap-2 pr-8"
                       >
                         <Database className="h-3 w-3" />
@@ -244,7 +244,7 @@ export function DataVisualizationArea() {
                             : "outline"
                         }
                         size="sm"
-                        onClick={handleSelectFile}
+                        onClick={() => handleSelectFile(file as any)}
                         className="flex items-center gap-2 pr-8"
                       >
                         <Map className="h-3 w-3" />
