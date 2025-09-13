@@ -1,13 +1,7 @@
-# Climate Data Platform
-
-- You should document how you cleaned and standardized the data.
-- Focus on showing that your architecture can handle spatial + tabular data.
-- Provide a README explaining design choices, assumptions, and trade-offs.
-
-## Folder Structure
+# Folder Structure
 
 ```txt
-climate_data_platform_backend/
+backend/
 ├── app/
 │   ├── main.py               # FastAPI app initialization
 │   ├── config.py             # Configuration settings
